@@ -79,14 +79,14 @@ function SenseBlock({ sense, isSubentry = false }: { sense: Sense; isSubentry?: 
                         {romanToArabic(sense.senseNumber)}.
                     </span>
                 )}
-                {sense.pos && <span className="font-mono text-xs text-gray-500">{sense.pos}</span>}
+                {sense.pos && <span className="font-mono text-sm text-gray-500">{sense.pos}</span>}
             </div>
 
             <div className="block">
                 {sense.definitions.map((def, idx) => (
                     <div key={idx} className="mb-3 last:mb-0">
                         <div className="mb-1">
-                            {def.usageLabel && <span className="text-[10px] font-bold uppercase tracking-wider text-white bg-black px-1 py-0.5 mr-2">{def.usageLabel}</span>}
+                            {def.usageLabel && <span className="text-[10px] font-bold tracking-wider text-white bg-black px-1 py-0.5 mr-2">{def.usageLabel}</span>}
                             {def.geographicLabel && <span className="text-[10px] font-bold uppercase tracking-wider text-black border border-black px-1 py-0.5 mr-2">{def.geographicLabel}</span>}
                             <span className="font-serif text-lg leading-relaxed" dangerouslySetInnerHTML={{ __html: def.text }} />
                             {def.examples.length > 0 && <span className="font-serif text-lg font-bold">:</span>}

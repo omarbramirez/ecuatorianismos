@@ -151,39 +151,43 @@ function parseDefinitions(senseEl: Element): Definition[] {
 }
 
 function parseSenses(parentEl: Element): Sense[] {
-  const senseNodes = parentEl.getElementsByTagName('Sense');
   const senses: Sense[] = [];
+  const children = parentEl.childNodes;
 
-  for (let i = 0; i < senseNodes.length; i++) {
-    const s = senseNodes.item(i) as Element;
-    const senseNumber = getTextContent(s, 'Sense.SenseNumber') || undefined;
-    const pos = getTextContent(s, 'Sense.Categoría.Gramatical') || getTextContent(s, 'Sense.Categoría.Gramatical') || getTextContent(s, 'Sense.Categoría.Gramatical') || undefined;
+  for (let i = 0; i < children.length; i++) {
+    const node = children.item(i) as Element;
+    if (node.nodeName === 'Sense') {
+      const senseNumber = getTextContent(node, 'Sense.SenseNumber') || undefined;
+      const pos = getTextContent(node, 'Sense.Categoría.Gramatical') || undefined;
+      const definitions = parseDefinitions(node);
 
-    const definitions = parseDefinitions(s);
-
-    senses.push({
-      senseNumber,
-      pos: pos || undefined,
-      definitions,
-    });
+      senses.push({
+        senseNumber,
+        pos: pos || undefined,
+        definitions,
+      });
+    }
   }
 
   return senses;
 }
 
 function parseSubentries(lemmaEl: Element): Subentry[] {
-  const subNodes = lemmaEl.getElementsByTagName('Subentry');
   const subs: Subentry[] = [];
-  for (let i = 0; i < subNodes.length; i++) {
-    const sub = subNodes.item(i) as Element;
-    // Subentry.LemmaSign puede contener <Underline> dentro
-    const signEl = getFirstElement(sub, 'Subentry.LemmaSign') || getFirstElement(sub, 'Subentry.LemmaSign');
-    const sign = signEl ? trimOrEmpty(signEl.textContent || '') : getTextContent(sub, 'Subentry.LemmaSign') || '';
+  const children = lemmaEl.childNodes;
 
-    // Notar: dentro de Subentry puede haber uno o más Sense
-    const senses = parseSenses(sub);
+  for (let i = 0; i < children.length; i++) {
+    const node = children.item(i) as Element;
+    if (node.nodeName === 'Subentry') {
+      // Subentry.LemmaSign puede contener <Underline> dentro
+      const signEl = getFirstElement(node, 'Subentry.LemmaSign') || getFirstElement(node, 'Subentry.LemmaSign');
+      const sign = signEl ? trimOrEmpty(signEl.textContent || '') : getTextContent(node, 'Subentry.LemmaSign') || '';
 
-    subs.push({ sign, sense: senses });
+      // Notar: dentro de Subentry puede haber uno o más Sense
+      const senses = parseSenses(node);
+
+      subs.push({ sign, sense: senses });
+    }
   }
   return subs;
 }
