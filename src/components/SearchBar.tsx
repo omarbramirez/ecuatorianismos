@@ -17,25 +17,25 @@ export function SearchBar({ value, onChange }: SearchBarProps) {
     }, [localValue, onChange]);
 
     return (
-        <div className="w-full mb-12">
+        <div className="w-full">
             <div className="relative group">
                 <input
                     type="text"
-                    className="w-full py-4 bg-transparent border-b-2 border-gray-300 focus:border-black text-3xl font-display font-medium placeholder-gray-400 outline-none transition-colors"
+                    className="w-full py-3 pl-4 pr-12 bg-white/10 border border-white/20 rounded-sm text-white placeholder-white/60 focus:bg-white focus:text-brand-blue focus:placeholder-gray-400 outline-none transition-all font-sans"
                     placeholder="Buscar palabra..."
                     value={localValue}
                     onChange={(e) => setLocalValue(e.target.value)}
                 />
-                <div className="absolute right-0 top-1/2 transform -translate-y-1/2">
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
                     <svg
-                        className="text-black w-8 h-8"
+                        className="text-white/60 group-focus-within:text-brand-blue w-5 h-5 transition-colors"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
                     >
                         <path
-                            strokeLinecap="square"
-                            strokeLinejoin="miter"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
                             strokeWidth={2}
                             d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                         />

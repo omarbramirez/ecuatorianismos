@@ -71,7 +71,7 @@ export function useDictionary() {
 
     // --- Filtering & Searching Logic ---
     const filteredLemmas = useMemo(() => {
-        return lemmas.filter((lemma) => {
+        const results = lemmas.filter((lemma) => {
             // 1. Text Search
             if (searchQuery) {
                 const q = searchQuery.toLowerCase();
@@ -112,6 +112,30 @@ export function useDictionary() {
 
             return true;
         });
+
+        // Sort by relevance if there is a search query
+        if (searchQuery) {
+            const q = searchQuery.toLowerCase();
+            return results.sort((a, b) => {
+                const aSign = a.lemmaSign.toLowerCase();
+                const bSign = b.lemmaSign.toLowerCase();
+
+                // 1. Exact match
+                if (aSign === q && bSign !== q) return -1;
+                if (bSign === q && aSign !== q) return 1;
+
+                // 2. Starts with
+                const aStarts = aSign.startsWith(q);
+                const bStarts = bSign.startsWith(q);
+                if (aStarts && !bStarts) return -1;
+                if (bStarts && !aStarts) return 1;
+
+                // 3. Alphabetical fallback
+                return aSign.localeCompare(bSign);
+            });
+        }
+
+        return results;
     }, [lemmas, searchQuery, filters]);
 
     // --- Incidence Logic ---
