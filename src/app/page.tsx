@@ -40,18 +40,18 @@ export default function Page() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-red-50 text-red-600 font-mono">
+      <div className="w-full min-h-screen flex items-center justify-center bg-red-50 text-red-600 font-mono">
         ERROR: {error}
       </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-background text-foreground font-sans selection:bg-black selection:text-white">
+    <main className="min-h-screen w-full bg-background text-foreground font-sans selection:bg-black selection:text-white">
       {/* Header */}
       <header className="border-b-2 border-black sticky top-0 z-20 bg-background/95 backdrop-blur-sm">
         <div className="max-w-[1600px] mx-auto px-6 py-8 md:py-12">
-          <h1 className="text-6xl md:text-8xl font-display font-bold text-black tracking-tighter mb-8 leading-[0.8]">
+          <h1 className="text-4xl md:text-8xl font-display font-bold text-black tracking-tighter mb-8 leading-[0.8] text-center">
             Ecuatorianismos
           </h1>
           <SearchBar value={searchQuery} onChange={setSearchQuery} />

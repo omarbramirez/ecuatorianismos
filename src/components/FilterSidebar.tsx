@@ -21,10 +21,10 @@ export function FilterSidebar({ availableFilters, filters, setFilters }: FilterS
 
     return (
         <aside className="w-full md:w-64 h-fit sticky top-8">
-            <h3 className="font-display font-bold text-2xl mb-8 text-black border-b-2 border-black pb-2">Filtros</h3>
+            {/* <h3 className="font-display font-bold text-2xl mb-8 text-black border-b-2 border-black pb-2">Filtros</h3> */}
 
             {/* Letra Inicial */}
-            <div className="mb-8">
+            {/* <div className="mb-8">
                 <h4 className="font-sans font-bold text-xs text-gray-500 mb-4 uppercase tracking-widest">Inicial</h4>
                 <div className="flex flex-wrap gap-2">
                     {availableFilters.letters.map((l) => (
@@ -40,7 +40,7 @@ export function FilterSidebar({ availableFilters, filters, setFilters }: FilterS
                         </button>
                     ))}
                 </div>
-            </div>
+            </div> */}
 
             {/* Categoría Gramatical */}
             <div className="mb-8">
@@ -68,7 +68,7 @@ export function FilterSidebar({ availableFilters, filters, setFilters }: FilterS
             <div className="mb-8">
                 <h4 className="font-sans font-bold text-xs text-gray-500 mb-4 uppercase tracking-widest">Uso</h4>
                 <select
-                    className="w-full p-3 border-2 border-gray-200 bg-transparent text-sm font-medium focus:border-black outline-none transition-colors appearance-none rounded-none"
+                    className="w-1/2 p-3 border-2 border-gray-200 bg-transparent text-sm font-medium focus:border-black outline-none transition-colors appearance-none rounded-none"
                     value={filters.usage || ""}
                     onChange={(e) => toggleFilter("usage", e.target.value)}
                 >
@@ -85,7 +85,7 @@ export function FilterSidebar({ availableFilters, filters, setFilters }: FilterS
             <div className="mb-8">
                 <h4 className="font-sans font-bold text-xs text-gray-500 mb-4 uppercase tracking-widest">Región</h4>
                 <select
-                    className="w-full p-3 border-2 border-gray-200 bg-transparent text-sm font-medium focus:border-black outline-none transition-colors appearance-none rounded-none"
+                    className="w-1/2 p-3 border-2 border-gray-200 bg-transparent text-sm font-medium focus:border-black outline-none transition-colors appearance-none rounded-none"
                     value={filters.geography || ""}
                     onChange={(e) => toggleFilter("geography", e.target.value)}
                 >

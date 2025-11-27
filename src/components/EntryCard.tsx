@@ -51,12 +51,35 @@ export function EntryCard({ lemma, onShowIncidences }: EntryCardProps) {
     );
 }
 
+function romanToArabic(roman: string): string {
+    const map: Record<string, number> = { I: 1, V: 5, X: 10, L: 50, C: 100, D: 500, M: 1000 };
+    let result = 0;
+    let prev = 0;
+    const upper = roman.toUpperCase().replace('.', ''); // Remove dots if present
+
+    for (let i = upper.length - 1; i >= 0; i--) {
+        const curr = map[upper[i]];
+        if (!curr) return roman; // Return original if not a valid roman numeral
+        if (curr >= prev) {
+            result += curr;
+        } else {
+            result -= curr;
+        }
+        prev = curr;
+    }
+    return result.toString();
+}
+
 function SenseBlock({ sense, isSubentry = false }: { sense: Sense; isSubentry?: boolean }) {
     return (
         <div className={`text-black ${isSubentry ? "mt-2" : ""}`}>
             <div className="flex items-baseline gap-2 mb-1">
-                {sense.senseNumber && <span className="font-mono font-bold text-black text-sm">{sense.senseNumber}.</span>}
-                {sense.pos && <span className="font-mono text-xs text-gray-500 italic">[{sense.pos}]</span>}
+                {sense.senseNumber && (
+                    <span className="font-mono font-bold text-black text-sm">
+                        {romanToArabic(sense.senseNumber)}.
+                    </span>
+                )}
+                {sense.pos && <span className="font-mono text-xs text-gray-500">{sense.pos}</span>}
             </div>
 
             <div className="block">
@@ -66,11 +89,12 @@ function SenseBlock({ sense, isSubentry = false }: { sense: Sense; isSubentry?: 
                             {def.usageLabel && <span className="text-[10px] font-bold uppercase tracking-wider text-white bg-black px-1 py-0.5 mr-2">{def.usageLabel}</span>}
                             {def.geographicLabel && <span className="text-[10px] font-bold uppercase tracking-wider text-black border border-black px-1 py-0.5 mr-2">{def.geographicLabel}</span>}
                             <span className="font-serif text-lg leading-relaxed" dangerouslySetInnerHTML={{ __html: def.text }} />
+                            {def.examples.length > 0 && <span className="font-serif text-lg font-bold">:</span>}
                         </div>
                         {def.examples.length > 0 && (
                             <div className="mt-2 pl-4 border-l border-black/20">
                                 {def.examples.map((ex, i) => (
-                                    <div key={i} className="text-gray-600 italic font-serif text-base">
+                                    <div key={i} className="text-gray-600 italic font-serif text-base mb-1">
                                         <span dangerouslySetInnerHTML={{ __html: `"${ex.text}"` }} />
                                         {ex.source && <span className="text-gray-400 not-italic text-xs font-sans ml-2">— {ex.source}</span>}
                                     </div>
