@@ -141,15 +141,28 @@ export function useDictionary() {
     // --- Incidence Logic ---
     const getIncidences = useCallback((term: string) => {
         if (!term) return [];
-        const lowerTerm = term.toLowerCase();
 
-        // Find lemmas where the definition contains the term
+        // Escape special regex characters to prevent errors
+        const escapeRegExp = (string: string) => {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        };
+
+        const escapedTerm = escapeRegExp(term);
+
+        // Create a Unicode-aware regex for whole word matching
+        // (?<!\p{L}) - Negative lookbehind: ensure preceding char is NOT a letter
+        // (?!\p{L})  - Negative lookahead: ensure following char is NOT a letter
+        // 'u' flag enables Unicode property escapes
+        // 'i' flag enables case-insensitive matching
+        const regex = new RegExp(`(?<!\\p{L})${escapedTerm}(?!\\p{L})`, 'iu');
+
+        // Find lemmas where the definition contains the term as a whole word
         // We exclude the lemma itself to avoid self-reference
         return lemmas.filter(l => {
-            if (l.lemmaSign.toLowerCase() === lowerTerm) return false;
+            if (l.lemmaSign.toLowerCase() === term.toLowerCase()) return false;
 
-            const inSenses = l.senses.some(s => s.definitions.some(d => d.plainText.toLowerCase().includes(lowerTerm)));
-            const inSubentries = l.subentries.some(sub => sub.sense.some(s => s.definitions.some(d => d.plainText.toLowerCase().includes(lowerTerm))));
+            const inSenses = l.senses.some(s => s.definitions.some(d => regex.test(d.plainText)));
+            const inSubentries = l.subentries.some(sub => sub.sense.some(s => s.definitions.some(d => regex.test(d.plainText))));
 
             return inSenses || inSubentries;
         });
