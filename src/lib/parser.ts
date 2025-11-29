@@ -22,6 +22,7 @@ export type Example = {
   text: string;
   source?: string;
   isAdHoc?: boolean;
+  adHocLabel?: string;
 };
 
 export type Definition = {
@@ -112,6 +113,7 @@ function parseExamples(defEl: Element): Example[] {
       text: text || '',
       source: source || undefined,
       isAdHoc: !!adHoc,
+      adHocLabel: adHoc || undefined,
     });
   }
 
