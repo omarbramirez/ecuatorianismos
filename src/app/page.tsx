@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useDictionary } from "@/hooks/useDictionary";
 import { SearchBar } from "@/components/SearchBar";
-import { FilterSidebar } from "@/components/FilterSidebar";
 import { EntryCard } from "@/components/EntryCard";
 import { IncidenceList } from "@/components/IncidenceList";
 import { Lemma } from "@/lib/parser";
