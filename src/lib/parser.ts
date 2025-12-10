@@ -1,23 +1,8 @@
-/**
- * parser-node-ts.ts
- *
- * Parser TypeScript para transformar XML léxico (lemmas, senses, definitions, examples, subentries)
- * en una estructura JSON jerárquica pensada para MongoDB / PostgreSQL JSONB.
- *
- * Dependencias:
- *   npm i xmldom
- *   npm i -D typescript ts-node @types/node
- *
- * Uso (ejemplo):
- *   import { parseXmlFile } from './parser-node-ts';
- *   const data = await parseXmlFile('./public/db/ecuatorianismos.xml');
- *   console.log(JSON.stringify(data[0], null, 2));
- */
-
+// parser-node-ts.ts
 import { promises as fs } from 'fs';
 import { DOMParser, XMLSerializer } from 'xmldom';
 
-// Tipos
+// --- TIPOS (Sin cambios) ---
 export type Example = {
   text: string;
   source?: string;
@@ -27,8 +12,9 @@ export type Example = {
 
 export type Definition = {
   acepcion?: string;
-  text: string; // mantiene etiquetas <Bold>, <Italic>, <Underline> en HTML-like
-  plainText: string; // texto plano para búsquedas
+  contorno?: string;
+  text: string;
+  plainText: string;
   usageLabel?: string;
   geographicLabel?: string;
   utc?: string;
@@ -37,24 +23,27 @@ export type Definition = {
 
 export type Sense = {
   senseNumber?: string;
-  pos?: string; // categoría gramatical
+  etimologia?: string;
+  scientificName?: string;
+  pos?: string;
   definitions: Definition[];
 };
 
 export type Subentry = {
   sign: string;
-  sense: Sense[]; // puede tener múltiples senses
+  sense: Sense[];
 };
 
 export type Lemma = {
   lemmaSign: string;
+  etimologia?: string;
   observations?: string;
   variants?: string | string[];
   senses: Sense[];
   subentries: Subentry[];
 };
 
-// Utilidades DOM
+// --- UTILIDADES DOM ---
 const parser = new DOMParser();
 const serializer = new XMLSerializer();
 
@@ -62,7 +51,15 @@ const trimOrEmpty = (s: string | null | undefined) => (s ? s.trim() : '');
 
 function getFirstElement(parent: Element, tagName: string): Element | null {
   const list = parent.getElementsByTagName(tagName);
-  return list && list.length > 0 ? (list.item(0) as Element) : null;
+  if (list && list.length > 0) return list.item(0) as Element;
+
+  for (let i = 0; i < parent.childNodes.length; i++) {
+    const node = parent.childNodes.item(i);
+    if (node.nodeType === 1 && (node as Element).nodeName === tagName) {
+      return node as Element;
+    }
+  }
+  return null;
 }
 
 function getTextContent(parent: Element, tagName: string): string {
@@ -72,18 +69,17 @@ function getTextContent(parent: Element, tagName: string): string {
 
 function transformXmlToHtml(xml: string): string {
   return xml
-    .replace(/<Bold>/g, '<b>')
-    .replace(/<\/Bold>/g, '</b>')
-    .replace(/<Italic>/g, '<i>')
-    .replace(/<\/Italic>/g, '</i>')
-    .replace(/<Underline>/g, '<u>')
-    .replace(/<\/Underline>/g, '</u>');
+    .replace(/<Bold>/gi, '<b>')
+    .replace(/<\/Bold>/gi, '</b>')
+    .replace(/<Italic>/gi, '<i>')
+    .replace(/<\/Italic>/gi, '</i>')
+    .replace(/<Underline>/gi, '<u>')
+    .replace(/<\/Underline>/gi, '</u>');
 }
 
 function getInnerXML(parent: Element, tagName: string): string {
   const el = getFirstElement(parent, tagName);
   if (!el) return '';
-  // Serializa children para preservar etiquetas internas (<Bold>, <Italic>, etc.)
   let out = '';
   for (let i = 0; i < el.childNodes.length; i++) {
     const child = el.childNodes.item(i);
@@ -92,25 +88,33 @@ function getInnerXML(parent: Element, tagName: string): string {
   return transformXmlToHtml(out.trim());
 }
 
-function nodeListToArray<T>(nl: NodeListOf<Element>, mapper: (e: Element) => T): T[] {
-  const arr: T[] = [];
-  for (let i = 0; i < nl.length; i++) arr.push(mapper(nl.item(i) as Element));
-  return arr;
-}
+// --- LOGICA DE PARSEO ---
 
-// Parsers específicos
 function parseExamples(defEl: Element): Example[] {
   const examplesNodes = defEl.getElementsByTagName('Example');
   const examples: Example[] = [];
 
   for (let i = 0; i < examplesNodes.length; i++) {
     const exEl = examplesNodes.item(i) as Element;
-    const text = getInnerXML(exEl, 'Example.Example') || getTextContent(exEl, 'Example.Example');
+
+    // 1. Extracción cruda
+    let text = getInnerXML(exEl, 'Example.Example') || getTextContent(exEl, 'Example.Example');
     const source = getTextContent(exEl, 'Example.Source');
     const adHoc = getTextContent(exEl, 'Example.Ad.hoc');
 
+    // 2. Limpieza básica
+    text = text ? text.trim() : '';
+
+    // 3. FILTRO CRÍTICO:
+    // Si el texto está vacío O es exactamente ":", saltamos esta iteración.
+    // Al usar 'continue', el array se mantiene vacío y la UI no renderizará nada.
+    if (!text || text === ':') {
+      continue;
+    }
+
+    // 4. Solo si pasa el filtro, lo agregamos
     examples.push({
-      text: text || '',
+      text: text,
       source: source || undefined,
       isAdHoc: !!adHoc,
       adHocLabel: adHoc || undefined,
@@ -120,54 +124,98 @@ function parseExamples(defEl: Element): Example[] {
   return examples;
 }
 
-function parseDefinitions(senseEl: Element): Definition[] {
+/**
+ * Parsea un nodo <Definition> individual.
+ * Extraído a función propia para manejar definiciones huérfanas o anidadas.
+ */
+function parseSingleDefinitionNode(d: Element): Definition {
+  const acepcion = getTextContent(d, 'Definition.Acepción') || undefined;
+  const contorno = getInnerXML(d, 'Definition.Contorno') || getTextContent(d, 'Definition.Contorno') || undefined;
+  const text = getInnerXML(d, 'Definition.Definición') || getTextContent(d, 'Definition.Definición') || '';
+  const plainText = text.replace(/<[^>]+>/g, '');
+  const usageLabel = getTextContent(d, 'Definition.Marca.de.uso') || undefined;
+  const geographicLabel = getTextContent(d, 'Definition.Marca.geográfica') || undefined;
+  const utc = getTextContent(d, 'Definition.UTC') || undefined;
+  const examples = parseExamples(d);
+
+  return {
+    acepcion,
+    contorno,
+    text,
+    plainText,
+    usageLabel,
+    geographicLabel,
+    utc,
+    examples,
+  };
+}
+
+/**
+ * Busca definiciones anidadas (comportamiento estándar)
+ */
+function parseNestedDefinitions(senseEl: Element): Definition[] {
   const defNodes = senseEl.getElementsByTagName('Definition');
   const defs: Definition[] = [];
-
   for (let i = 0; i < defNodes.length; i++) {
-    const d = defNodes.item(i) as Element;
-
-    const acepcion = getTextContent(d, 'Definition.Acepción') || undefined;
-    // Conservamos la definición con su posible marcado interno
-    const text = getInnerXML(d, 'Definition.Definición') || getTextContent(d, 'Definition.Definición') || '';
-    // Creamos una versión en texto plano para búsquedas
-    const plainText = text.replace(/<[^>]+>/g, '');
-
-    const usageLabel = getTextContent(d, 'Definition.Marca.de.uso') || undefined;
-    const geographicLabel = getTextContent(d, 'Definition.Marca.geográfica') || undefined;
-    const utc = getTextContent(d, 'Definition.UTC') || undefined;
-    const examples = parseExamples(d);
-
-    defs.push({
-      acepcion,
-      text,
-      plainText,
-      usageLabel,
-      geographicLabel,
-      utc,
-      examples,
-    });
+    defs.push(parseSingleDefinitionNode(defNodes.item(i) as Element));
   }
-
   return defs;
 }
 
+/**
+ * LOGICA CLAVE: Parseo de Senses Stateful.
+ * Maneja tanto estructura anidada como estructura plana (mixed siblings).
+ */
 function parseSenses(parentEl: Element): Sense[] {
   const senses: Sense[] = [];
+
+  // Mantenemos referencia al último sentido procesado para inyectarle definiciones huérfanas
+  let currentSense: Sense | null = null;
+
   const children = parentEl.childNodes;
 
   for (let i = 0; i < children.length; i++) {
     const node = children.item(i) as Element;
-    if (node.nodeName === 'Sense') {
-      const senseNumber = getTextContent(node, 'Sense.SenseNumber') || undefined;
-      const pos = getTextContent(node, 'Sense.Categoría.Gramatical') || undefined;
-      const definitions = parseDefinitions(node);
 
-      senses.push({
+    // Caso 1: Encontramos un nodo <Sense> explícito
+    if (node.nodeName === 'Sense') {
+      // Si teníamos un sentido acumulándose, ya está en el array (por referencia), 
+      // pero actualizamos el puntero `currentSense` al nuevo.
+
+      const senseNumber = getTextContent(node, 'Sense.SenseNumber') || undefined;
+      const etimologia = getInnerXML(node, 'Sense.Etimología') || undefined;
+      const scientificName = getInnerXML(node, 'Sense.Nombre.cientifico') || getTextContent(node, 'Sense.Nombre.cientifico') || undefined;
+      const pos = getTextContent(node, 'Sense.Categoría.Gramatical') || undefined;
+
+      // Intentamos buscar definiciones anidadas (estándar)
+      const internalDefinitions = parseNestedDefinitions(node);
+
+      const newSense: Sense = {
         senseNumber,
+        etimologia,
+        scientificName,
         pos: pos || undefined,
-        definitions,
-      });
+        definitions: internalDefinitions,
+      };
+
+      senses.push(newSense);
+      currentSense = newSense; // Actualizamos el puntero actual
+    }
+
+    // Caso 2: Encontramos una <Definition> que es hermana directa (Estructura rota/plana)
+    else if (node.nodeName === 'Definition') {
+      const orphanDef = parseSingleDefinitionNode(node);
+
+      if (currentSense) {
+        // Escenario de recuperación: Agregamos a sentido previo
+        currentSense.definitions.push(orphanDef);
+      } else {
+        // Escenario extremo: Definición aparece ANTES que cualquier Sense.
+        // Creamos un sentido implícito.
+        const implicitSense: Sense = { definitions: [orphanDef] };
+        senses.push(implicitSense);
+        currentSense = implicitSense;
+      }
     }
   }
 
@@ -181,14 +229,22 @@ function parseSubentries(lemmaEl: Element): Subentry[] {
   for (let i = 0; i < children.length; i++) {
     const node = children.item(i) as Element;
     if (node.nodeName === 'Subentry') {
-      // Subentry.LemmaSign puede contener <Underline> dentro
-      const signEl = getFirstElement(node, 'Subentry.LemmaSign') || getFirstElement(node, 'Subentry.LemmaSign');
-      const sign = signEl ? trimOrEmpty(signEl.textContent || '') : getTextContent(node, 'Subentry.LemmaSign') || '';
 
-      // Notar: dentro de Subentry puede haber uno o más Sense
+      // CAMBIO AQUÍ: Usamos getInnerXML para preservar <Underline> -> <u>
+      // Subentry.LemmaSign suele ser el contenedor del título
+      const sign = getInnerXML(node, 'Subentry.LemmaSign')
+        || getTextContent(node, 'Subentry.LemmaSign')
+        || '';
+
+      // Limpieza de espacios (pero preservando el HTML interno)
+      const cleanSign = sign.replace(/\s+/g, ' ').trim();
+
       const senses = parseSenses(node);
 
-      subs.push({ sign, sense: senses });
+      subs.push({
+        sign: cleanSign,
+        sense: senses
+      });
     }
   }
   return subs;
@@ -203,9 +259,13 @@ export async function parseXmlString(xmlString: string): Promise<Lemma[]> {
   for (let i = 0; i < lemmaNodes.length; i++) {
     const lemmaEl = lemmaNodes.item(i) as Element;
     const lemmaSign = getTextContent(lemmaEl, 'Lemma.LemmaSign') || '';
-
-    // Observaciones y variantes, si existen en complementary-like structures
     const observations = getTextContent(lemmaEl, 'Observations') || undefined;
+
+    const etimologia = getInnerXML(
+      lemmaEl,
+      'Lemma.Etimología..si.aplica.para.más.de.un.sense.'
+    ) || undefined;
+
     let variants: string | string[] | undefined = undefined;
     const variantsText = getTextContent(lemmaEl, 'Variants');
     if (variantsText) {
@@ -217,6 +277,7 @@ export async function parseXmlString(xmlString: string): Promise<Lemma[]> {
 
     lemmas.push({
       lemmaSign: lemmaSign.trim(),
+      etimologia,
       observations,
       variants,
       senses,

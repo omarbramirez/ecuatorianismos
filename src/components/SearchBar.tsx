@@ -88,7 +88,7 @@ export function SearchBar({ value, onChange, suggestions, onSelect }: SearchBarP
 
             {/* Autocomplete Dropdown */}
             {showSuggestions && suggestions.length > 0 && (
-                <ul className="absolute w-full bg-white text-gray-800 shadow-xl rounded-b-sm border-t border-gray-100 max-h-96 overflow-y-auto z-40 top-full left-0">
+                <ul className="absolute w-full bg-white text-gray-800 shadow-xl rounded-b-sm border-t border-gray-100 max-h-26 overflow-y-auto z-40 top-full left-0">
                     {suggestions.map((lemma, idx) => (
                         <li
                             key={`${lemma.lemmaSign}-${idx}`}
