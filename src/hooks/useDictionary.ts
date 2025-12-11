@@ -170,6 +170,7 @@ export function useDictionary() {
 
     return {
         lemmas: filteredLemmas,
+        allLemmas: lemmas,
         loading,
         error,
         availableFilters,

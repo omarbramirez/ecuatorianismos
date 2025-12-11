@@ -10,6 +10,7 @@ import { Lemma } from "@/lib/parser";
 export default function Page() {
   const {
     lemmas,
+    allLemmas,
     loading,
     error,
     searchQuery,
@@ -21,6 +22,7 @@ export default function Page() {
   const [incidenceResults, setIncidenceResults] = useState<Lemma[]>([]);
   const [selectedLemma, setSelectedLemma] = useState<Lemma | null>(null);
 
+  // Mantenemos esta lógica por si se usa en otro lado
   const handleShowIncidences = (term: string) => {
     const results = getIncidences(term);
     setIncidenceResults(results);
@@ -30,6 +32,24 @@ export default function Page() {
   const handleSelectLemma = (lemma: Lemma) => {
     setSelectedLemma(lemma);
     setSearchQuery(lemma.lemmaSign);
+  };
+
+  // --- NUEVA LÓGICA DE NAVEGACIÓN ---
+  // Esta función busca "guambra" dentro de tus datos y lo pone como seleccionado
+  const handleNavigate = (term: string) => {
+    // CORRECCIÓN CRÍTICA: Buscamos en 'allLemmas', no en 'lemmas'
+    // Así encontramos "guambra" aunque el usuario esté filtrando por "huambra"
+    const targetLemma = allLemmas.find(
+      (l) => l.lemmaSign.toLowerCase() === term.trim().toLowerCase()
+    );
+
+    if (targetLemma) {
+      handleSelectLemma(targetLemma);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      console.warn(`Lema no encontrado: ${term}, mostrando incidencias.`);
+      handleShowIncidences(term);
+    }
   };
 
   if (loading) {
@@ -71,13 +91,13 @@ export default function Page() {
       </header>
 
       <div className="max-w-[1600px] mx-auto px-6 py-12">
-        {/* Content Area */}
         <div className="max-w-4xl mx-auto">
           {selectedLemma ? (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              {/* AQUÍ EL CAMBIO: Pasamos handleNavigate en la prop onNavigate */}
               <EntryCard
                 lemma={selectedLemma}
-                onShowIncidences={handleShowIncidences}
+                onNavigate={handleNavigate}
               />
             </div>
           ) : (
@@ -85,15 +105,12 @@ export default function Page() {
               <p className="text-2xl font-serif text-gray-400 mb-4">
                 Escribe una palabra en el buscador para comenzar.
               </p>
-              <div className="text-6xl text-gray-200">
-                📖
-              </div>
+              <div className="text-6xl text-gray-200">📖</div>
             </div>
           )}
         </div>
       </div>
 
-      {/* Incidence Modal */}
       {incidenceTerm && (
         <IncidenceList
           term={incidenceTerm}
