@@ -105,14 +105,15 @@ function parseExamples(defEl: Element): Example[] {
     // 2. Limpieza básica
     text = text ? text.trim() : '';
 
-    // 3. FILTRO CRÍTICO:
-    // Si el texto está vacío O es exactamente ":", saltamos esta iteración.
-    // Al usar 'continue', el array se mantiene vacío y la UI no renderizará nada.
-    if (!text || text === ':') {
+    // 3. FILTRO CRÍTICO CORREGIDO:
+    // Antes descartábamos si (!text).
+    // Ahora: Solo descartamos si NO hay texto Y TAMPOCO hay metadatos (source o adHoc).
+    // Esto permite que pase el caso de "llevar" donde solo existe <Example.Ad.hoc>
+    if ((!text || text === ':') && !source && !adHoc) {
       continue;
     }
 
-    // 4. Solo si pasa el filtro, lo agregamos
+    // 4. Agregamos el ejemplo
     examples.push({
       text: text,
       source: source || undefined,
@@ -123,7 +124,6 @@ function parseExamples(defEl: Element): Example[] {
 
   return examples;
 }
-
 /**
  * Parsea un nodo <Definition> individual.
  * Extraído a función propia para manejar definiciones huérfanas o anidadas.
