@@ -157,7 +157,7 @@ export function SearchBar({ value, onChange, suggestions, onSelect }: SearchBarP
             {showSuggestions && suggestions.length > 0 && (
                 <ul
                     ref={listRef}
-                    className="absolute w-full bg-white text-gray-800 shadow-xl rounded-b-sm border-t border-gray-100 max-h-[300px] overflow-y-auto z-40 top-full left-0 scroll-smooth"
+                    className="absolute w-full bg-white text-gray-800 shadow-xl rounded-b-sm border-t border-gray-100 max-h-[100px] overflow-y-auto z-40 top-full left-0 scroll-smooth"
                 >
                     {suggestions.map((lemma, idx) => {
                         // Determinamos si este ítem está activo
@@ -167,8 +167,8 @@ export function SearchBar({ value, onChange, suggestions, onSelect }: SearchBarP
                             <li
                                 key={`${lemma.lemmaSign}-${idx}`}
                                 className={`px-4 py-3 cursor-pointer border-b border-gray-50 last:border-0 transition-colors ${isActive
-                                        ? "bg-brand-blue/10" // Color de fondo cuando se navega con teclado
-                                        : "hover:bg-gray-100" // Color de fondo al pasar el mouse
+                                    ? "bg-brand-blue/10" // Color de fondo cuando se navega con teclado
+                                    : "hover:bg-gray-100" // Color de fondo al pasar el mouse
                                     }`}
                                 onClick={() => handleSelect(lemma)}
                                 // Sincronizamos el mouse con el teclado:
