@@ -34,19 +34,35 @@ export default function Page() {
     setSearchQuery(lemma.lemmaSign);
   };
 
-  // --- NUEVA LÓGICA DE NAVEGACIÓN ---
-  // Esta función busca "guambra" dentro de tus datos y lo pone como seleccionado
+  // --- LÓGICA DE NAVEGACIÓN MEJORADA (Soporte para Subentradas) ---
   const handleNavigate = (term: string) => {
-    // CORRECCIÓN CRÍTICA: Buscamos en 'allLemmas', no en 'lemmas'
-    // Así encontramos "guambra" aunque el usuario esté filtrando por "huambra"
-    const targetLemma = allLemmas.find(
-      (l) => l.lemmaSign.toLowerCase() === term.trim().toLowerCase()
+    const cleanTerm = term.trim().toLowerCase();
+
+    // 1. Intento A: Buscar coincidencia exacta en el LEMA PRINCIPAL
+    // Ejemplo: Busca "hecho, -a" -> Encuentra "hecho, -a"
+    let targetLemma = allLemmas.find(
+      (l) => l.lemmaSign.toLowerCase() === cleanTerm
     );
 
+    // 2. Intento B: Si falla, buscar dentro de las SUBENTRADAS
+    // Ejemplo: Busca "hecho funda" -> El buscador revisa las subentradas y encuentra que pertenece al padre "hecho"
+    if (!targetLemma) {
+      targetLemma = allLemmas.find((l) =>
+        l.subentries.some((sub) => {
+          // Limpiamos el HTML del título de la subentrada (ej: "<u>hecho</u> funda")
+          // para compararlo texto con texto ("hecho funda")
+          const plainSubSign = sub.sign.replace(/<[^>]+>/g, "").toLowerCase().trim();
+          return plainSubSign === cleanTerm;
+        })
+      );
+    }
+
     if (targetLemma) {
+      // ¡Éxito! Abrimos la ficha del padre que contiene la subentrada o el lema
       handleSelectLemma(targetLemma);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } else {
+      // Fallback: Si definitivamente no existe, mostramos incidencias
       console.warn(`Lema no encontrado: ${term}, mostrando incidencias.`);
       handleShowIncidences(term);
     }
@@ -55,7 +71,7 @@ export default function Page() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-4xl font-display font-bold animate-pulse">CARGANDO...</div>
+        <div className="text-4xl font-display font-bold animate-pulse text-brand-blue">CARGANDO...</div>
       </div>
     );
   }
@@ -81,6 +97,7 @@ export default function Page() {
               value={searchQuery}
               onChange={(val) => {
                 setSearchQuery(val);
+                // Si el usuario borra todo, limpiamos la selección
                 if (val === '') setSelectedLemma(null);
               }}
               suggestions={lemmas}
@@ -94,7 +111,6 @@ export default function Page() {
         <div className="max-w-4xl mx-auto">
           {selectedLemma ? (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              {/* AQUÍ EL CAMBIO: Pasamos handleNavigate en la prop onNavigate */}
               <EntryCard
                 lemma={selectedLemma}
                 onNavigate={handleNavigate}

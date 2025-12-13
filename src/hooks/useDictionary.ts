@@ -3,9 +3,9 @@ import { Lemma, Sense, Definition } from '@/lib/parser';
 
 export type FilterOptions = {
     initialLetter?: string;
-    pos?: string; // Categoría gramatical
-    usage?: string; // Marca de uso
-    geography?: string; // Marca geográfica
+    pos?: string;
+    usage?: string;
+    geography?: string;
 };
 
 export function useDictionary() {
@@ -32,7 +32,7 @@ export function useDictionary() {
             });
     }, []);
 
-    // --- Derived Data for Filters ---
+    // --- Derived Data for Filters (Sin cambios, lógica correcta) ---
     const availableFilters = useMemo(() => {
         const letters = new Set<string>();
         const pos = new Set<string>();
@@ -41,6 +41,8 @@ export function useDictionary() {
 
         lemmas.forEach((lemma) => {
             if (lemma.lemmaSign) {
+                // Normalizamos para asegurar que 'Á' caiga en 'A' si se desea, 
+                // o lo dejamos estricto según la base. Usaremos charAt directo.
                 letters.add(lemma.lemmaSign.charAt(0).toUpperCase());
             }
             lemma.senses.forEach((sense) => {
@@ -69,68 +71,73 @@ export function useDictionary() {
         };
     }, [lemmas]);
 
-    // --- Filtering & Searching Logic ---
+    // --- Filtering & Searching Logic (MODO ESTRICTO) ---
     const filteredLemmas = useMemo(() => {
-        const results = lemmas.filter((lemma) => {
-            // 1. Text Search
-            if (searchQuery) {
-                const q = searchQuery.toLowerCase();
-                const matchesSign = lemma.lemmaSign.toLowerCase().includes(q);
-                const matchesSubentries = lemma.subentries.some(s => s.sign.toLowerCase().includes(q));
+        let results = lemmas;
 
-                // Also search in definitions if needed, but primary search is usually on the sign
-                // Let's include definition search for "richer" results
-                const matchesDef = lemma.senses.some(s =>
-                    s.definitions.some(d => d.plainText.toLowerCase().includes(q))
-                );
+        // 1. Filtros (Primero filtramos por categoría, letra, etc.)
+        if (filters.initialLetter) {
+            results = results.filter(l => l.lemmaSign.toUpperCase().startsWith(filters.initialLetter!));
+        }
 
-                if (!matchesSign && !matchesSubentries && !matchesDef) return false;
-            }
+        if (filters.pos) {
+            results = results.filter(l => 
+                l.senses.some(s => s.pos === filters.pos) ||
+                l.subentries.some(sub => sub.sense.some(s => s.pos === filters.pos))
+            );
+        }
 
-            // 2. Filters
-            if (filters.initialLetter && !lemma.lemmaSign.toUpperCase().startsWith(filters.initialLetter)) {
-                return false;
-            }
+        if (filters.usage) {
+            results = results.filter(l => 
+                l.senses.some(s => s.definitions.some(d => d.usageLabel === filters.usage)) ||
+                l.subentries.some(sub => sub.sense.some(s => s.definitions.some(d => d.usageLabel === filters.usage)))
+            );
+        }
 
-            if (filters.pos) {
-                const hasPos = lemma.senses.some(s => s.pos === filters.pos) ||
-                    lemma.subentries.some(sub => sub.sense.some(s => s.pos === filters.pos));
-                if (!hasPos) return false;
-            }
+        if (filters.geography) {
+            results = results.filter(l => 
+                l.senses.some(s => s.definitions.some(d => d.geographicLabel === filters.geography)) ||
+                l.subentries.some(sub => sub.sense.some(s => s.definitions.some(d => d.geographicLabel === filters.geography)))
+            );
+        }
 
-            if (filters.usage) {
-                const hasUsage = lemma.senses.some(s => s.definitions.some(d => d.usageLabel === filters.usage)) ||
-                    lemma.subentries.some(sub => sub.sense.some(s => s.definitions.some(d => d.usageLabel === filters.usage)));
-                if (!hasUsage) return false;
-            }
+        // 2. Búsqueda de Texto (La parte delicada)
+        if (searchQuery) {
+            const q = searchQuery.toLowerCase().trim();
+            
+            results = results.filter((lemma) => {
+                // A. Coincidencia Lema Principal (STARTS WITH)
+                // "Si no lo sabe, ni modes": Solo mostramos si empieza con lo que escribe.
+                const matchesSign = lemma.lemmaSign.toLowerCase().startsWith(q);
 
-            if (filters.geography) {
-                const hasGeo = lemma.senses.some(s => s.definitions.some(d => d.geographicLabel === filters.geography)) ||
-                    lemma.subentries.some(sub => sub.sense.some(s => s.definitions.some(d => d.geographicLabel === filters.geography)));
-                if (!hasGeo) return false;
-            }
+                // B. Coincidencia Subentradas (STARTS WITH + LIMPIEZA)
+                // Esto permite encontrar "hecho funda" escribiendo "hecho f...", 
+                // pero NO escribiendo "funda".
+                const matchesSubentries = lemma.subentries.some(s => {
+                    // Importante: Limpiamos HTML antes de comparar
+                    const cleanSign = s.sign.replace(/<[^>]+>/g, "").toLowerCase();
+                    return cleanSign.startsWith(q);
+                });
 
-            return true;
-        });
+                // C. ELIMINADO: Búsqueda en definiciones (matchesDef).
+                // Razón: Genera ruido y viola el principio de búsqueda exacta.
 
-        // Sort by relevance if there is a search query
+                return matchesSign || matchesSubentries;
+            });
+        }
+
+        // 3. Ordenamiento
+        // Mantenemos la lógica de ordenamiento que tenías, es buena.
         if (searchQuery) {
             const q = searchQuery.toLowerCase();
             return results.sort((a, b) => {
                 const aSign = a.lemmaSign.toLowerCase();
                 const bSign = b.lemmaSign.toLowerCase();
 
-                // 1. Exact match
                 if (aSign === q && bSign !== q) return -1;
                 if (bSign === q && aSign !== q) return 1;
 
-                // 2. Starts with
-                const aStarts = aSign.startsWith(q);
-                const bStarts = bSign.startsWith(q);
-                if (aStarts && !bStarts) return -1;
-                if (bStarts && !aStarts) return 1;
-
-                // 3. Alphabetical fallback
+                // Como ya filtramos por startsWith, el orden alfabético es lo natural
                 return aSign.localeCompare(bSign);
             });
         }
@@ -138,29 +145,22 @@ export function useDictionary() {
         return results;
     }, [lemmas, searchQuery, filters]);
 
-    // --- Incidence Logic ---
+    // --- Incidence Logic (Sin cambios mayores, solo optimización) ---
     const getIncidences = useCallback((term: string) => {
         if (!term) return [];
 
-        // Escape special regex characters to prevent errors
         const escapeRegExp = (string: string) => {
             return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         };
 
         const escapedTerm = escapeRegExp(term);
-
-        // Create a Unicode-aware regex for whole word matching
-        // (?<!\p{L}) - Negative lookbehind: ensure preceding char is NOT a letter
-        // (?!\p{L})  - Negative lookahead: ensure following char is NOT a letter
-        // 'u' flag enables Unicode property escapes
-        // 'i' flag enables case-insensitive matching
+        // Mantenemos tu regex unicode, es excelente para este caso.
         const regex = new RegExp(`(?<!\\p{L})${escapedTerm}(?!\\p{L})`, 'iu');
 
-        // Find lemmas where the definition contains the term as a whole word
-        // We exclude the lemma itself to avoid self-reference
         return lemmas.filter(l => {
             if (l.lemmaSign.toLowerCase() === term.toLowerCase()) return false;
 
+            // Buscamos en plainText, que ya viene limpio del parser
             const inSenses = l.senses.some(s => s.definitions.some(d => regex.test(d.plainText)));
             const inSubentries = l.subentries.some(sub => sub.sense.some(s => s.definitions.some(d => regex.test(d.plainText))));
 
@@ -170,7 +170,7 @@ export function useDictionary() {
 
     return {
         lemmas: filteredLemmas,
-        allLemmas: lemmas,
+        allLemmas: lemmas, // Exportamos todos para el handleNavigate global
         loading,
         error,
         availableFilters,

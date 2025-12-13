@@ -112,10 +112,10 @@ function SenseBlock({
 
             {sense.etimologia && (
                 <div className="mb-2">
-                    <span
+                    {`[(`} <span
                         className="font-sans text-sm text-gray-600 [&>i]:font-serif [&>i]:italic"
                         dangerouslySetInnerHTML={{ __html: sense.etimologia }}
-                    />
+                    /> {`)]`} 
                 </div>
             )}
 
@@ -160,7 +160,7 @@ function SenseBlock({
 
                             {def.contorno && (
                                 <span
-                                    className="font-sans text-lg text-gray-500 mr-1 italic"
+                                    className="font-sans text-lg text-gray-700 mr-1 italic"
                                     dangerouslySetInnerHTML={{ __html: def.contorno }}
                                 />
                             )}
@@ -181,18 +181,18 @@ function SenseBlock({
                             <div className="pl-4 mt-1 border-l-2 border-gray-200">
                                 {def.examples.map((ex, i) => (
                                     <p key={i} className="font-serif italic text-gray-600 mb-1 last:mb-0">
-                                        <span dangerouslySetInnerHTML={{ __html: ex.text }} />
+                                       — <span dangerouslySetInnerHTML={{ __html: ex.text }} />
                                         
                                         {/* Fuente del ejemplo */}
                                         {ex.source && (
-                                            <span className="text-gray-400 not-italic text-sm font-sans ml-2 block sm:inline">
-                                                — {ex.source}
+                                            <span className="text-gray-400 not-italic text-md font-sans ml-2 block sm:inline">
+                                                {ex.source}
                                             </span>
                                         )}
                                         
                                         {/* Etiqueta Ad Hoc */}
                                         {ex.adHocLabel && (
-                                            <span className="text-gray-500 not-italic text-sm font-sans ml-2 block sm:inline opacity-75">
+                                            <span className="text-gray-500 not-italic text-md font-sans ml-2 block sm:inline opacity-75">
                                                 [{ex.adHocLabel}]
                                             </span>
                                         )}
