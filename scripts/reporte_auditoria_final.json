@@ -1,0 +1,102 @@
+[
+  {
+    "lemma": "babear",
+    "type": "EMPTY_EXAMPLE_WITH_CONTENT",
+    "details": "Definición existe, pero el bloque de ejemplo está vacío (posible mal ubicación).",
+    "contentPreview": "Desear una persona intensamente a alguien o algo: ...",
+    "hasSubentries": false
+  },
+  {
+    "lemma": "balurdo, -a",
+    "type": "EMPTY_EXAMPLE_WITH_CONTENT",
+    "details": "Definición existe, pero el bloque de ejemplo está vacío (posible mal ubicación).",
+    "contentPreview": "balurde...",
+    "hasSubentries": false
+  },
+  {
+    "lemma": "checo",
+    "type": "EMPTY_EXAMPLE_WITH_CONTENT",
+    "details": "Definición existe, pero el bloque de ejemplo está vacío (posible mal ubicación).",
+    "contentPreview": "jaboncillo...",
+    "hasSubentries": false
+  },
+  {
+    "lemma": "chilchigua",
+    "type": "EMPTY_EXAMPLE_WITH_CONTENT",
+    "details": "Definición existe, pero el bloque de ejemplo está vacío (posible mal ubicación).",
+    "contentPreview": "chigchigua...",
+    "hasSubentries": false
+  },
+  {
+    "lemma": "guasicamía",
+    "type": "EMPTY_EXAMPLE_WITH_CONTENT",
+    "details": "Definición existe, pero el bloque de ejemplo está vacío (posible mal ubicación).",
+    "contentPreview": "huasicamía...",
+    "hasSubentries": false
+  },
+  {
+    "lemma": "horcón",
+    "type": "GHOST_DEFINITION",
+    "details": "Hay ejemplos pero falta la definición.",
+    "hasSubentries": false
+  },
+  {
+    "lemma": "hualingo, -a",
+    "type": "GHOST_DEFINITION",
+    "details": "Hay ejemplos pero falta la definición.",
+    "hasSubentries": false
+  },
+  {
+    "lemma": "llevar",
+    "subentry": "llevar a mal andar",
+    "type": "EMPTY_EXAMPLE_WITH_CONTENT",
+    "details": "Definición existe, pero el bloque de ejemplo está vacío (posible mal ubicación).",
+    "contentPreview": "Esos problemas que tienes en el trabajo los llevas...",
+    "hasSubentries": false
+  },
+  {
+    "lemma": "pan",
+    "type": "ZOMBIE_NODE",
+    "details": "Acepción ? vacía y sin ejemplos. Nodo muerto.",
+    "hasSubentries": true
+  },
+  {
+    "lemma": "papi",
+    "type": "ZOMBIE_NODE",
+    "details": "Acepción 2 vacía y sin ejemplos. Nodo muerto.",
+    "hasSubentries": false
+  },
+  {
+    "lemma": "rascabonito",
+    "type": "ZOMBIE_NODE",
+    "details": "Acepción ? vacía y sin ejemplos. Nodo muerto.",
+    "hasSubentries": false
+  },
+  {
+    "lemma": "rayado, -a",
+    "type": "GHOST_DEFINITION",
+    "details": "Hay ejemplos pero falta la definición.",
+    "hasSubentries": false
+  },
+  {
+    "lemma": "rehogado",
+    "type": "ZOMBIE_NODE",
+    "details": "Acepción ? vacía y sin ejemplos. Nodo muerto.",
+    "hasSubentries": false
+  },
+  {
+    "lemma": "taza",
+    "subentry": "taza del baño",
+    "type": "EMPTY_EXAMPLE_WITH_CONTENT",
+    "details": "Definición existe, pero el bloque de ejemplo está vacío (posible mal ubicación).",
+    "contentPreview": "Aparato sanitario para evacuar orina y excrementos...",
+    "hasSubentries": false
+  },
+  {
+    "lemma": "trinquete",
+    "type": "EMPTY_EXAMPLE_WITH_CONTENT",
+    "details": "Definición existe, pero el bloque de ejemplo está vacío (posible mal ubicación).",
+    "contentPreview": "Aldabilla con que se aseguran las puertas...",
+    "hasSubentries": false
+  }
+]

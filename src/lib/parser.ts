@@ -2,7 +2,7 @@
 import { promises as fs } from 'fs';
 import { DOMParser, XMLSerializer } from 'xmldom';
 
-// --- TIPOS (Sin cambios) ---
+// --- TIPOS ---
 export type Example = {
   text: string;
   source?: string;
@@ -47,43 +47,52 @@ export type Lemma = {
 const parser = new DOMParser();
 const serializer = new XMLSerializer();
 
+// Helper seguro para trim
 const trimOrEmpty = (s: string | null | undefined) => (s ? s.trim() : '');
 
+// Busca el primer elemento hijo por nombre de etiqueta (Directo o profundo)
+// Nota: getElementsByTagName busca en profundidad. Para estructuras planas esto está bien
+// siempre y cuando los nombres de las etiquetas sean únicos por nivel.
 function getFirstElement(parent: Element, tagName: string): Element | null {
   const list = parent.getElementsByTagName(tagName);
   if (list && list.length > 0) return list.item(0) as Element;
-
-  for (let i = 0; i < parent.childNodes.length; i++) {
-    const node = parent.childNodes.item(i);
-    if (node.nodeType === 1 && (node as Element).nodeName === tagName) {
-      return node as Element;
-    }
-  }
   return null;
 }
 
+// Extracción segura de texto
 function getTextContent(parent: Element, tagName: string): string {
   const el = getFirstElement(parent, tagName);
   return el ? trimOrEmpty(el.textContent) : '';
 }
 
+// Transformación de etiquetas XML visuales a HTML estándar
 function transformXmlToHtml(xml: string): string {
+  if (!xml) return '';
   return xml
     .replace(/<Bold>/gi, '<b>')
     .replace(/<\/Bold>/gi, '</b>')
     .replace(/<Italic>/gi, '<i>')
     .replace(/<\/Italic>/gi, '</i>')
     .replace(/<Underline>/gi, '<u>')
-    .replace(/<\/Underline>/gi, '</u>');
+    .replace(/<\/Underline>/gi, '</u>')
+    // Agregamos manejo de saltos de línea si existen en el XML
+    .replace(/\n/g, ' '); 
 }
 
+// FUNCIÓN BLINDADA: Obtiene el XML interno (HTML) de un nodo
 function getInnerXML(parent: Element, tagName: string): string {
   const el = getFirstElement(parent, tagName);
+  // Protección contra nulos
   if (!el) return '';
+  
   let out = '';
-  for (let i = 0; i < el.childNodes.length; i++) {
-    const child = el.childNodes.item(i);
-    out += serializer.serializeToString(child as any);
+  // Protección adicional: verificamos childNodes
+  if (el.childNodes) {
+    for (let i = 0; i < el.childNodes.length; i++) {
+      const child = el.childNodes.item(i);
+      // Serializamos el nodo a string preservando etiquetas internas
+      out += serializer.serializeToString(child as any);
+    }
   }
   return transformXmlToHtml(out.trim());
 }
@@ -97,23 +106,23 @@ function parseExamples(defEl: Element): Example[] {
   for (let i = 0; i < examplesNodes.length; i++) {
     const exEl = examplesNodes.item(i) as Element;
 
-    // 1. Extracción cruda
-    let text = getInnerXML(exEl, 'Example.Example') || getTextContent(exEl, 'Example.Example');
+    // 1. Extracción: Priorizamos getInnerXML para capturar negritas dentro del ejemplo
+    let text = getInnerXML(exEl, 'Example.Example');
+    // Si falla (o está vacío), intentamos textContent
+    if (!text) text = getTextContent(exEl, 'Example.Example');
+    
     const source = getTextContent(exEl, 'Example.Source');
     const adHoc = getTextContent(exEl, 'Example.Ad.hoc');
 
-    // 2. Limpieza básica
     text = text ? text.trim() : '';
 
-    // 3. FILTRO CRÍTICO CORREGIDO:
-    // Antes descartábamos si (!text).
-    // Ahora: Solo descartamos si NO hay texto Y TAMPOCO hay metadatos (source o adHoc).
-    // Esto permite que pase el caso de "llevar" donde solo existe <Example.Ad.hoc>
+    // 3. FILTRO HEURÍSTICO (Validado con reporte_estructuras.json):
+    // Aceptamos el ejemplo si tiene texto, O si tiene fuente, O si es Ad Hoc.
+    // Solo lo descartamos si TODO está vacío o es basura (":").
     if ((!text || text === ':') && !source && !adHoc) {
       continue;
     }
 
-    // 4. Agregamos el ejemplo
     examples.push({
       text: text,
       source: source || undefined,
@@ -124,18 +133,21 @@ function parseExamples(defEl: Element): Example[] {
 
   return examples;
 }
-/**
- * Parsea un nodo <Definition> individual.
- * Extraído a función propia para manejar definiciones huérfanas o anidadas.
- */
+
 function parseSingleDefinitionNode(d: Element): Definition {
+  // Mapeo exacto según reporte_estructuras.json
   const acepcion = getTextContent(d, 'Definition.Acepción') || undefined;
+  
+  // Usamos getInnerXML para contorno porque a veces trae cursivas
   const contorno = getInnerXML(d, 'Definition.Contorno') || getTextContent(d, 'Definition.Contorno') || undefined;
+  
   const text = getInnerXML(d, 'Definition.Definición') || getTextContent(d, 'Definition.Definición') || '';
-  const plainText = text.replace(/<[^>]+>/g, '');
+  const plainText = text.replace(/<[^>]+>/g, ''); // Texto limpio para búsquedas
+  
   const usageLabel = getTextContent(d, 'Definition.Marca.de.uso') || undefined;
   const geographicLabel = getTextContent(d, 'Definition.Marca.geográfica') || undefined;
   const utc = getTextContent(d, 'Definition.UTC') || undefined;
+  
   const examples = parseExamples(d);
 
   return {
@@ -150,9 +162,6 @@ function parseSingleDefinitionNode(d: Element): Definition {
   };
 }
 
-/**
- * Busca definiciones anidadas (comportamiento estándar)
- */
 function parseNestedDefinitions(senseEl: Element): Definition[] {
   const defNodes = senseEl.getElementsByTagName('Definition');
   const defs: Definition[] = [];
@@ -163,31 +172,27 @@ function parseNestedDefinitions(senseEl: Element): Definition[] {
 }
 
 /**
- * LOGICA CLAVE: Parseo de Senses Stateful.
- * Maneja tanto estructura anidada como estructura plana (mixed siblings).
+ * PARSEO STATEFUL DE SENTIDOS
+ * Fundamental para soportar la mezcla de <Sense> y <Definition> hermanos.
  */
 function parseSenses(parentEl: Element): Sense[] {
   const senses: Sense[] = [];
-
-  // Mantenemos referencia al último sentido procesado para inyectarle definiciones huérfanas
   let currentSense: Sense | null = null;
-
   const children = parentEl.childNodes;
 
   for (let i = 0; i < children.length; i++) {
     const node = children.item(i) as Element;
+    
+    // Ignoramos nodos de texto puro (espacios en blanco)
+    if (node.nodeType !== 1) continue;
 
-    // Caso 1: Encontramos un nodo <Sense> explícito
+    // Caso 1: <Sense> Explícito
     if (node.nodeName === 'Sense') {
-      // Si teníamos un sentido acumulándose, ya está en el array (por referencia), 
-      // pero actualizamos el puntero `currentSense` al nuevo.
-
       const senseNumber = getTextContent(node, 'Sense.SenseNumber') || undefined;
       const etimologia = getInnerXML(node, 'Sense.Etimología') || undefined;
-      const scientificName = getInnerXML(node, 'Sense.Nombre.cientifico') || getTextContent(node, 'Sense.Nombre.cientifico') || undefined;
+      const scientificName = getInnerXML(node, 'Sense.Nombre.cientifico') || undefined;
       const pos = getTextContent(node, 'Sense.Categoría.Gramatical') || undefined;
 
-      // Intentamos buscar definiciones anidadas (estándar)
       const internalDefinitions = parseNestedDefinitions(node);
 
       const newSense: Sense = {
@@ -199,19 +204,17 @@ function parseSenses(parentEl: Element): Sense[] {
       };
 
       senses.push(newSense);
-      currentSense = newSense; // Actualizamos el puntero actual
+      currentSense = newSense;
     }
 
-    // Caso 2: Encontramos una <Definition> que es hermana directa (Estructura rota/plana)
+    // Caso 2: <Definition> Huérfana (Estructura Legacy)
     else if (node.nodeName === 'Definition') {
       const orphanDef = parseSingleDefinitionNode(node);
 
       if (currentSense) {
-        // Escenario de recuperación: Agregamos a sentido previo
         currentSense.definitions.push(orphanDef);
       } else {
-        // Escenario extremo: Definición aparece ANTES que cualquier Sense.
-        // Creamos un sentido implícito.
+        // Creamos un sentido implícito si la definición aparece antes que un Sense
         const implicitSense: Sense = { definitions: [orphanDef] };
         senses.push(implicitSense);
         currentSense = implicitSense;
@@ -228,17 +231,16 @@ function parseSubentries(lemmaEl: Element): Subentry[] {
 
   for (let i = 0; i < children.length; i++) {
     const node = children.item(i) as Element;
-    if (node.nodeName === 'Subentry') {
+    if (node.nodeType === 1 && node.nodeName === 'Subentry') {
 
-      // CAMBIO AQUÍ: Usamos getInnerXML para preservar <Underline> -> <u>
-      // Subentry.LemmaSign suele ser el contenedor del título
+      // Extraemos el título preservando <Underline>
       const sign = getInnerXML(node, 'Subentry.LemmaSign')
         || getTextContent(node, 'Subentry.LemmaSign')
         || '';
 
-      // Limpieza de espacios (pero preservando el HTML interno)
       const cleanSign = sign.replace(/\s+/g, ' ').trim();
 
+      // Usamos la misma lógica robusta de Senses para las subentradas
       const senses = parseSenses(node);
 
       subs.push({
@@ -250,7 +252,7 @@ function parseSubentries(lemmaEl: Element): Subentry[] {
   return subs;
 }
 
-// Función principal de parseo
+// Función principal de parseo (Entrada Pública)
 export async function parseXmlString(xmlString: string): Promise<Lemma[]> {
   const doc = parser.parseFromString(xmlString, 'text/xml');
   const lemmaNodes = doc.getElementsByTagName('Lemma');
@@ -258,20 +260,24 @@ export async function parseXmlString(xmlString: string): Promise<Lemma[]> {
 
   for (let i = 0; i < lemmaNodes.length; i++) {
     const lemmaEl = lemmaNodes.item(i) as Element;
+    
     const lemmaSign = getTextContent(lemmaEl, 'Lemma.LemmaSign') || '';
     const observations = getTextContent(lemmaEl, 'Observations') || undefined;
 
+    // Etimología a nivel de Lema (Rara, pero existe en tus datos)
     const etimologia = getInnerXML(
       lemmaEl,
       'Lemma.Etimología..si.aplica.para.más.de.un.sense.'
     ) || undefined;
 
+    // Variantes
     let variants: string | string[] | undefined = undefined;
     const variantsText = getTextContent(lemmaEl, 'Variants');
     if (variantsText) {
       variants = variantsText.split(/[,;|]/).map(s => s.trim());
     }
 
+    // Ejecución de parseo profundo
     const senses = parseSenses(lemmaEl);
     const subentries = parseSubentries(lemmaEl);
 
@@ -292,13 +298,14 @@ export async function parseXmlFile(filePath: string): Promise<Lemma[]> {
   return parseXmlString(xml);
 }
 
-// CLI helper si se ejecuta directo con ts-node
+// CLI para pruebas rápidas
 if (require.main === module) {
   (async () => {
     const fp = process.argv[2] || './data.xml';
     try {
       const result = await parseXmlFile(fp);
-      console.log(JSON.stringify(result.slice(0, 10), null, 2));
+      // Imprime solo los primeros 3 para verificar estructura
+      console.log(JSON.stringify(result.slice(0, 3), null, 2));
     } catch (err) {
       console.error('Error parsing file', err);
       process.exit(1);

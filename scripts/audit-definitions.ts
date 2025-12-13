@@ -1,149 +1,186 @@
 import { promises as fs } from 'fs';
 import { DOMParser, XMLSerializer } from 'xmldom';
+import * as path from 'path';
 
-// Configuración
-const INPUT_FILE = './data.xml'; // Tu archivo XML
-const OUTPUT_FILE = './reporte_definiciones.json';
+const INPUT_FILE = path.join('./data.xml');
+const OUTPUT_FILE = './reporte_auditoria_final.json';
 
-// Interfaces para el reporte
 interface Issue {
-    lemma: string;
-    subentry?: string; // Opcional, si el problema está en una subentrada
-    type: 'EMPTY' | 'POINTER_ONLY';
-    content: string; // Para que el cliente vea qué hay dentro (ej: "<Bold>...</Bold>")
+  lemma: string;
+  subentry?: string; // Si es undefined, el problema está en el nivel superior
+  type: 'ZOMBIE_NODE' | 'EMPTY_EXAMPLE_WITH_CONTENT' | 'GHOST_DEFINITION';
+  details: string;
+  hasSubentries: boolean; // Para saber si el lema padre "se salva" por tener hijos
+  contentPreview?: string;
 }
 
 const serializer = new XMLSerializer();
 
-// Función auxiliar para obtener el HTML interno limpio
-function getInnerXML(node: Element): string {
-    let out = '';
-    for (let i = 0; i < node.childNodes.length; i++) {
-        const child = node.childNodes.item(i);
-        out += serializer.serializeToString(child as any);
+// Utilitarios de texto
+function getTextContent(parent: Element, tagName: string): string {
+    const list = parent.getElementsByTagName(tagName);
+    if (list && list.length > 0) {
+        return list.item(0)?.textContent?.trim() || '';
     }
-    return out.trim();
+    return '';
 }
 
-async function auditDefinitions() {
-    console.log(`🔍 Iniciando auditoría sobre ${INPUT_FILE}...`);
+function getInnerXML(node: Element | null | undefined): string {
+  if (!node) return '';
+  if (node.childNodes) {
+      let out = '';
+      for (let i = 0; i < node.childNodes.length; i++) {
+        out += serializer.serializeToString(node.childNodes.item(i) as any);
+      }
+      return out.trim();
+  }
+  return '';
+}
 
-    const xmlContent = await fs.readFile(INPUT_FILE, 'utf-8');
-    const doc = new DOMParser().parseFromString(xmlContent, 'text/xml');
-    const lemmas = doc.getElementsByTagName('Lemma');
+async function auditComprehensive() {
+  console.log(`🚀 Iniciando auditoría integral sobre ${INPUT_FILE}...`);
+  
+  try {
+      const xmlContent = await fs.readFile(INPUT_FILE, 'utf-8');
+      const doc = new DOMParser().parseFromString(xmlContent, 'text/xml');
+      const lemmas = doc.getElementsByTagName('Lemma');
+      const issues: Issue[] = [];
 
-    const issues: Issue[] = [];
-    let totalDefinitionsChecked = 0;
+      console.log(`📊 Analizando ${lemmas.length} entradas...`);
 
-    // Recorremos cada Lema
-    for (let i = 0; i < lemmas.length; i++) {
+      for (let i = 0; i < lemmas.length; i++) {
         const lemmaEl = lemmas.item(i) as Element;
-        const lemmaSign = lemmaEl.getElementsByTagName('Lemma.LemmaSign').item(0)?.textContent?.trim() || 'Desconocido';
+        
+        // Datos del Lema
+        const lemmaSignNode = lemmaEl.getElementsByTagName('Lemma.LemmaSign').item(0);
+        const lemmaSign = lemmaSignNode ? lemmaSignNode.textContent?.trim() || 'Desconocido' : 'Desconocido';
+        
+        // Verificamos si tiene subentradas válidas (Regla de Jerarquía)
+        const subentriesNodes = lemmaEl.getElementsByTagName('Subentry');
+        const hasSubentries = subentriesNodes.length > 0;
 
-        // 1. Revisar definiciones del LEMA PRINCIPAL (si tiene sentidos directos)
-        // Buscamos dentro de los Senses directos del Lemma
-        const lemmaSenses = lemmaEl.getElementsByTagName('Sense');
-        // Ojo: getElementsByTagName busca en toda la profundidad, así que filtramos
-        // los que son hijos directos o cercanos, aunque para este reporte rápido,
-        // iterar todos los senses y ver si pertenecen a un subentry o al lemma es complejo.
-        // Simplificaremos iterando las definiciones directas si la estructura lo permite,
-        // o mejor: iteramos la estructura lógica.
-
-        // Iteración Lógica: Lema -> Sense -> Definition
+        // 1. Revisar definiciones del PADRE (Nivel Lema)
         for (let s = 0; s < lemmaEl.childNodes.length; s++) {
-            const senseNode = lemmaEl.childNodes.item(s);
-            if (senseNode.nodeName === 'Sense') {
-                checkDefinitionsInNode(senseNode as Element, lemmaSign, undefined, issues);
-            }
+          const node = lemmaEl.childNodes.item(s);
+          if (node.nodeName === 'Sense') {
+             auditDefinitionsInNode(node as Element, lemmaSign, undefined, issues, hasSubentries);
+          }
+          // A veces hay definiciones hermanas directas (estructura legacy)
+          else if (node.nodeName === 'Definition') {
+             // Envolvemos en un fake element para reutilizar la función
+             const fakeSense = doc.createElement('Sense');
+             fakeSense.appendChild(node.cloneNode(true));
+             auditDefinitionsInNode(fakeSense, lemmaSign, undefined, issues, hasSubentries);
+          }
         }
 
-        // 2. Revisar SUBENTRADAS
-        const subentries = lemmaEl.getElementsByTagName('Subentry');
-        for (let j = 0; j < subentries.length; j++) {
-            const subEl = subentries.item(j) as Element;
-            // Obtener nombre de subentrada (a veces tiene <Underline>, etc)
-            const subRawSign = getInnerXML(subEl.getElementsByTagName('Subentry.LemmaSign').item(0) as Element);
-            // Limpiamos etiquetas para el reporte
-            const subSignClean = subRawSign.replace(/<[^>]+>/g, '').trim();
+        // 2. Revisar definiciones de los HIJOS (Subentradas)
+        for (let j = 0; j < subentriesNodes.length; j++) {
+          const subEl = subentriesNodes.item(j) as Element;
+          const subRawSign = getInnerXML(subEl.getElementsByTagName('Subentry.LemmaSign').item(0));
+          const subSignClean = subRawSign.replace(/<[^>]+>/g, '').trim();
 
-            // Revisar Senses dentro de la Subentrada
-            const subSenses = subEl.getElementsByTagName('Sense');
-            for (let k = 0; k < subSenses.length; k++) {
-                checkDefinitionsInNode(subSenses.item(k) as Element, lemmaSign, subSignClean, issues);
-            }
+          const subSenses = subEl.getElementsByTagName('Sense');
+          for (let k = 0; k < subSenses.length; k++) {
+            auditDefinitionsInNode(subSenses.item(k) as Element, lemmaSign, subSignClean, issues, false); // Subentry no tiene "subentries" propias
+          }
+        }
+      }
+
+      // Guardar
+      await fs.writeFile(OUTPUT_FILE, JSON.stringify(issues, null, 2));
+      
+      console.log(`✅ Auditoría finalizada.`);
+      console.log(`⚠️  Total de incidencias: ${issues.length}`);
+      
+      // Resumen por tipo
+      const counts = issues.reduce((acc, curr) => {
+          acc[curr.type] = (acc[curr.type] || 0) + 1;
+          return acc;
+      }, {} as Record<string, number>);
+      console.table(counts);
+
+      console.log(`📂 Reporte guardado en: ${path.resolve(OUTPUT_FILE)}`);
+
+  } catch (error) {
+      console.error("❌ Error:", error);
+  }
+}
+
+function auditDefinitionsInNode(senseEl: Element, lemmaSign: string, subentrySign: string | undefined, issuesArray: Issue[], parentHasSubentries: boolean) {
+  const definitions = senseEl.getElementsByTagName('Definition');
+
+  for (let i = 0; i < definitions.length; i++) {
+    const defEl = definitions.item(i) as Element;
+    
+    // 1. Extraer Contenidos
+    const defText = getTextContent(defEl, 'Definition.Definición');
+    const acepcion = getTextContent(defEl, 'Definition.Acepción');
+    
+    // REGLA MAESTRA: Si tiene '+', es válido. Saltamos.
+    if (defText.includes('+')) continue;
+
+    // Verificar Ejemplos
+    const examples = defEl.getElementsByTagName('Example');
+    let hasValidExampleText = false;
+    let hasExampleNode = false;
+
+    // Analizamos si hay algún ejemplo válido
+    for (let j = 0; j < examples.length; j++) {
+        hasExampleNode = true;
+        const exEl = examples.item(j) as Element;
+        const exText = getTextContent(exEl, 'Example.Example');
+        
+        // Si hay texto real (no vacío, no solo ":")
+        if (exText && exText !== ':' && exText.trim().length > 0) {
+            hasValidExampleText = true;
         }
     }
 
-    // Escribir reporte
-    await fs.writeFile(OUTPUT_FILE, JSON.stringify(issues, null, 2));
+    const isDefEmpty = (!defText || defText.trim() === '');
 
-    console.log(`✅ Auditoría finalizada.`);
-    console.log(`📝 Total de lemas analizados: ${lemmas.length}`);
-    console.log(`⚠️  Problemas encontrados: ${issues.length}`);
-    console.log(`📂 Reporte guardado en: ${OUTPUT_FILE}`);
-}
+    // --- LÓGICA DE DETECCIÓN DE ERRORES ---
 
-/**
- * Función central de validación.
- * Analiza las definiciones dentro de un nodo Sense.
- */
-function checkDefinitionsInNode(senseEl: Element, lemmaSign: string, subentrySign: string | undefined, issuesArray: Issue[]) {
-    const definitions = senseEl.getElementsByTagName('Definition');
-
-    for (let i = 0; i < definitions.length; i++) {
-        const defEl = definitions.item(i) as Element;
-
-        // Buscamos <Definition.Definición>
-        const defContentNode = defEl.getElementsByTagName('Definition.Definición').item(0);
-
-        if (!defContentNode) {
-            // Caso raro: No existe el tag de definición
-            issuesArray.push({
-                lemma: lemmaSign,
-                subentry: subentrySign,
-                type: 'EMPTY',
-                content: '(Tag Definition.Definición inexistente)'
-            });
-            continue;
-        }
-
-        const rawContent = getInnerXML(defContentNode);
-        const plainText = defContentNode.textContent?.trim() || '';
-
-        // --- CRITERIOS DE FALLA ---
-
-        // 1. Definición Vacía
-        if (!rawContent || rawContent === '') {
-            issuesArray.push({
-                lemma: lemmaSign,
-                subentry: subentrySign,
-                type: 'EMPTY',
-                content: ''
-            });
-            continue;
-        }
-
-        // 2. Definición tipo "Puntero" (Referencia Cruzada Pura)
-        // El caso de "traer": <Bold>llevar a mal andar</Bold>
-        // Lógica: 
-        // - El texto plano no está vacío.
-        // - El HTML empieza con <Bold> y termina con </Bold>.
-        // - (Opcional) El texto es corto (menos de 50 caracteres para evitar falsos positivos de definiciones largas en negrita).
-
-        // Normalizamos para quitar espacios extra fuera de tags
-        const isWrappedInBold = rawContent.match(/^\s*<Bold>[\s\S]*<\/Bold>\s*$/i);
-
-        // Si está envuelto en negrita Y no tiene texto fuera de ella.
-        if (isWrappedInBold) {
-            issuesArray.push({
-                lemma: lemmaSign,
-                subentry: subentrySign,
-                type: 'POINTER_ONLY',
-                content: rawContent
-            });
-        }
+    // CASO 1: ZOMBIE NODE (El caso "Papi" Acepción 2)
+    // No hay texto de definición Y (No hay nodo de ejemplo O el nodo está vacío de texto)
+    if (isDefEmpty && !hasValidExampleText) {
+        issuesArray.push({
+            lemma: lemmaSign,
+            subentry: subentrySign,
+            type: 'ZOMBIE_NODE',
+            details: `Acepción ${acepcion || '?'} vacía y sin ejemplos. Nodo muerto.`,
+            hasSubentries: parentHasSubentries
+        });
+        continue;
     }
+
+    // CASO 2: GHOST DEFINITION (Definición vacía, pero tiene ejemplos)
+    // Esto es raro, ¿un ejemplo sin definición previa? Puede ser un error de estructura.
+    if (isDefEmpty && hasValidExampleText) {
+        issuesArray.push({
+            lemma: lemmaSign,
+            subentry: subentrySign,
+            type: 'GHOST_DEFINITION',
+            details: `Hay ejemplos pero falta la definición.`,
+            hasSubentries: parentHasSubentries
+        });
+        continue;
+    }
+
+    // CASO 3: EMPTY EXAMPLE WITH CONTENT (El caso "Llevar")
+    // Hay definición, hay nodo de ejemplo, pero el texto del ejemplo está vacío.
+    // Esto sugiere que la definición podría contener el ejemplo, o falta copiarlo.
+    if (!isDefEmpty && hasExampleNode && !hasValidExampleText) {
+        issuesArray.push({
+            lemma: lemmaSign,
+            subentry: subentrySign,
+            type: 'EMPTY_EXAMPLE_WITH_CONTENT',
+            details: `Definición existe, pero el bloque de ejemplo está vacío (posible mal ubicación).`,
+            contentPreview: defText.substring(0, 50) + '...',
+            hasSubentries: parentHasSubentries
+        });
+    }
+  }
 }
 
-// Ejecutar
-auditDefinitions().catch(console.error);
+auditComprehensive();
