@@ -91,11 +91,11 @@ function SenseBlock({
             {/* Cabecera del Sentido: Número romano, Gramática, Nombre Científico */}
             <div className="flex flex-wrap items-baseline gap-2 mb-1">
                 {/* Nuevo: Soporte para SenseNumber (ej: I, II) si viene en el XML */}
-                {sense.senseNumber && (
+                {/* {sense.senseNumber && (
                     <span className="font-bold text-brand-blue text-lg mr-1">
                         {sense.senseNumber}.
                     </span>
-                )}
+                )} */}
 
                 {sense.pos && (
                     <span className="text-[21px] font-sans text-sm text-gray-500 italic">
