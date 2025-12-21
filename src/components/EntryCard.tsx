@@ -8,7 +8,7 @@ interface EntryCardProps {
     lemma: Lemma;
     onNavigate: (term: string) => void;
 }
-
+import { ArrowUpRight } from "lucide-react";
 // --- 1. COMPONENTE DE HIDRATACIÓN DE TEXTO (HEURÍSTICA + ENLACES) ---
 // Este componente se mantiene igual, ya que su lógica de enlaces funcionaba bien.
 const RichDefinitionText = ({
@@ -18,57 +18,50 @@ const RichDefinitionText = ({
     htmlContent: string;
     onLinkClick: (term: string) => void
 }) => {
-    // A. LÓGICA HEURÍSTICA (Referencia Implícita: solo negrita, sin texto alrededor)
-    const trimmedContent = htmlContent.trim();
-    const implicitMatch = trimmedContent.match(/^<b>(.*?)<\/b>$/);
+    if (!htmlContent) return null;
 
-    if (implicitMatch) {
-        const term = implicitMatch[1].trim();
-        return (
-            <button
-                onClick={(e) => {
-                    e.stopPropagation();
-                    const cleanTerm = term.replace('+', '').trim();
-                    onLinkClick(cleanTerm);
-                }}
-                className="font-bold text-brand-blue hover:text-brand-accent hover:underline decoration-2 underline-offset-2 transition-colors cursor-pointer bg-transparent border-none p-0 align-baseline"
-                title={`Ir a la entrada de: ${term}`}
-            >
-                {term}
-            </button>
-        );
-    }
-
-    // B. LÓGICA ESTÁNDAR (Referencia Explícita con "+")
-    const crossRefRegex = /<b>(.*?)\s*\+\s*<\/b>/g;
-
-    if (!htmlContent.match(crossRefRegex)) {
-        return <span dangerouslySetInnerHTML={{ __html: htmlContent }} />;
-    }
-
-    const parts = htmlContent.split(/(<b>.*?\s*\+\s*<\/b>)/g);
+    // 1. Rompemos el HTML usando las etiquetas <b> como delimitador
+    const parts = htmlContent.split(/(<b>.*?<\/b>)/g);
 
     return (
         <span>
             {parts.map((part, index) => {
-                const match = part.match(/<b>(.*?)\s*\+\s*<\/b>/);
+                // 2. Detectamos si este fragmento es una negrita (un posible enlace)
+                const boldMatch = part.match(/^<b>(.*?)<\/b>$/);
 
-                if (match) {
-                    const term = match[1].trim();
+                if (boldMatch) {
+                    const rawText = boldMatch[1];
+
+                    // --- CAMBIO AQUÍ ---
+                    // Antes: rawText.replace('+', '').trim();
+                    // Ahora: Agregamos \d al Regex para eliminar números también.
+                    // Esto convierte "carachas 1" en "carachas" y "zapallo +" en "zapallo".
+                    const visualText = rawText.replace(/[+\d]/g, '').trim();
+
+                    // LIMPIEZA DE NAVEGACIÓN (Puntuación final):
+                    const navigationTerm = visualText.replace(/[.,:;]+$/, '').trim();
+
                     return (
                         <button
                             key={index}
                             onClick={(e) => {
                                 e.stopPropagation();
-                                onLinkClick(term);
+                                onLinkClick(navigationTerm);
                             }}
-                            className="font-bold text-brand-blue hover:text-brand-accent hover:underline decoration-2 underline-offset-2 transition-colors cursor-pointer bg-transparent border-none p-0 align-baseline"
-                            title={`Ir a la definición de: ${term}`}
+                            className="font-bold text-brand-blue hover:text-brand-accent hover:underline decoration-2 underline-offset-2 transition-colors cursor-pointer bg-transparent border-none p-0 inline-flex items-baseline gap-0.5 align-baseline group/link"
+                            title={`Ir a la entrada de: ${navigationTerm}`}
                         >
-                            {term} +
+                            <span dangerouslySetInnerHTML={{ __html: visualText }} />
+
+                            <ArrowUpRight
+                                className="w-3.5 h-3.5 inline-block opacity-60 group-hover/link:opacity-100 transition-opacity relative top-[2px]"
+                                strokeWidth={2.5}
+                            />
                         </button>
                     );
                 }
+
+                // 3. Si no es negrita, es texto normal
                 return <span key={index} dangerouslySetInnerHTML={{ __html: part }} />;
             })}
         </span>
@@ -102,7 +95,7 @@ function SenseBlock({
                         {sense.pos}
                     </span>
                 )}
-                
+
                 {sense.scientificName && (
                     <span className={`font-serif text-gray-600 ${isSubentry ? "text-base" : "text-lg"}`}>
                         <span dangerouslySetInnerHTML={{ __html: sense.scientificName }} />
@@ -112,10 +105,10 @@ function SenseBlock({
 
             {sense.etimologia && (
                 <div className="mb-2">
-                    {`[(`} <span
+                    {`(`} <span
                         className="font-sans text-sm text-gray-600 [&>i]:font-serif [&>i]:italic"
                         dangerouslySetInnerHTML={{ __html: sense.etimologia }}
-                    /> {`)]`} 
+                    /> {`)`}
                 </div>
             )}
 
@@ -181,15 +174,15 @@ function SenseBlock({
                             <div className="pl-4 mt-1 border-l-2 border-gray-200">
                                 {def.examples.map((ex, i) => (
                                     <p key={i} className="font-serif italic text-gray-600 mb-1 last:mb-0">
-                                       — <span dangerouslySetInnerHTML={{ __html: ex.text }} />
-                                        
+                                        — <span dangerouslySetInnerHTML={{ __html: ex.text }} />
+
                                         {/* Fuente del ejemplo */}
                                         {ex.source && (
                                             <span className="text-gray-400 not-italic text-md font-sans ml-2 block sm:inline">
                                                 {ex.source}
                                             </span>
                                         )}
-                                        
+
                                         {/* Etiqueta Ad Hoc */}
                                         {ex.adHocLabel && (
                                             <span className="text-gray-500 not-italic text-md font-sans ml-2 block sm:inline opacity-75">

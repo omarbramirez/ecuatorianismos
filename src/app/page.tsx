@@ -4,8 +4,9 @@ import { useState } from "react";
 import { useDictionary } from "@/hooks/useDictionary";
 import { SearchBar } from "@/components/SearchBar";
 import { EntryCard } from "@/components/EntryCard";
-import { IncidenceList } from "@/components/IncidenceList";
 import { Lemma } from "@/lib/parser";
+
+import WelcomeModal from "@/components/WelcomeModal";
 
 export default function Page() {
   const {
@@ -17,6 +18,8 @@ export default function Page() {
     setSearchQuery,
     getIncidences
   } = useDictionary();
+
+  const [isWelcomeOpen, setIsWelcomeOpen] = useState<boolean>(true); // Modal abierto por defecto
 
   const [incidenceTerm, setIncidenceTerm] = useState<string | null>(null);
   const [incidenceResults, setIncidenceResults] = useState<Lemma[]>([]);
@@ -86,6 +89,11 @@ export default function Page() {
 
   return (
     <main className="min-h-screen w-full bg-background text-foreground font-sans selection:bg-brand-accent selection:text-white">
+      {/* Nuevo Componente de Bienvenida */}
+      <WelcomeModal 
+        isOpen={isWelcomeOpen} 
+        onClose={() => setIsWelcomeOpen(false)} 
+      />
       {/* Header */}
       <header className="border-b border-brand-blue sticky top-0 z-20 bg-brand-blue text-white shadow-md">
         <div className="max-w-[1600px] mx-auto px-6 py-8 md:py-12">
@@ -127,13 +135,6 @@ export default function Page() {
         </div>
       </div>
 
-      {incidenceTerm && (
-        <IncidenceList
-          term={incidenceTerm}
-          incidences={incidenceResults}
-          onClose={() => setIncidenceTerm(null)}
-        />
-      )}
     </main>
   );
 }

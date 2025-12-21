@@ -9,56 +9,56 @@ import { Lemma, Sense, Definition } from "./parser"; // Ajusta la ruta de import
  */
 
 export function applyDataPatches(lemmas: Lemma[]): Lemma[] {
-  console.log("🩹 Aplicando parches temporales de datos...");
+    console.log("🩹 Aplicando parches temporales de datos...");
 
-  return lemmas.map(lemma => {
-    // Normalizamos para comparación
-    const sign = lemma.lemmaSign.toLowerCase().trim();
+    return lemmas.map(lemma => {
+        // Normalizamos para comparación
+        const sign = lemma.lemmaSign.toLowerCase().trim();
+        let patchedLemma = fixPersonaAdjectiveMark(lemma);
+        // ---------------------------------------------------------
+        // CATEGORÍA A: NODOS ZOMBIE (Eliminar acepciones vacías)
+        // ---------------------------------------------------------
+        if (['pan', 'rascabonito', 'rehogado'].includes(sign)) {
+            patchedLemma=  removeEmptyDefinitions(patchedLemma);
+        }
 
-    // ---------------------------------------------------------
-    // CATEGORÍA A: NODOS ZOMBIE (Eliminar acepciones vacías)
-    // ---------------------------------------------------------
-    if (['pan', 'rascabonito', 'rehogado'].includes(sign)) {
-      return removeEmptyDefinitions(lemma);
-    }
-    
-    if (sign === 'papi') {
-      // Caso específico: Papi tiene una acepción 2 vacía
-      return removeEmptyDefinitions(lemma);
-    }
+        if (sign === 'papi') {
+            // Caso específico: Papi tiene una acepción 2 vacía
+            patchedLemma = removeEmptyDefinitions(patchedLemma);
+        }
 
-    // ---------------------------------------------------------
-    // CATEGORÍA B: DEFINICIONES FANTASMA (Falta texto)
-    // Acción: Inyectar placeholder "[Definición en revisión]"
-    // ---------------------------------------------------------
-    if (['horcón', 'hualingo, -a', 'rayado, -a'].includes(sign)) {
-        return injectPlaceholderDefinition(lemma);
-    }
+        // ---------------------------------------------------------
+        // CATEGORÍA B: DEFINICIONES FANTASMA (Falta texto)
+        // Acción: Inyectar placeholder "[Definición en revisión]"
+        // ---------------------------------------------------------
+        if (['horcón', 'hualingo, -a', 'rayado, -a'].includes(sign)) {
+            patchedLemma = injectPlaceholderDefinition(patchedLemma);
+        }
 
-    // ---------------------------------------------------------
-    // CATEGORÍA C: REFERENCIAS ROTAS (Falta el "+")
-    // Acción: Agregar "+" al texto para que el parser lo detecte como link
-    // ---------------------------------------------------------
-    if (['balurdo, -a', 'checo', 'chilchigua', 'guasicamía'].includes(sign)) {
-        return fixBrokenCrossReference(lemma);
-    }
+        // ---------------------------------------------------------
+        // CATEGORÍA C: REFERENCIAS ROTAS (Falta el "+")
+        // Acción: Agregar "+" al texto para que el parser lo detecte como link
+        // ---------------------------------------------------------
+        if (['balurdo, -a', 'checo', 'chilchigua', 'guasicamía'].includes(sign)) {
+            patchedLemma =  fixBrokenCrossReference(patchedLemma);
+        }
 
-    // ---------------------------------------------------------
-    // CATEGORÍA D: ERRORES DE CONTENIDO (Ejemplo vs Definición)
-    // ---------------------------------------------------------
-    
-    // Caso: Llevar -> llevar a mal andar (Texto de ejemplo en definición)
-    if (sign === 'llevar') {
-       return fixLlevarSubentry(lemma);
-    }
+        // ---------------------------------------------------------
+        // CATEGORÍA D: ERRORES DE CONTENIDO (Ejemplo vs Definición)
+        // ---------------------------------------------------------
 
-    // Caso: Taza, Trinquete, Babear (Ejemplos vacíos estorbando)
-    if (['taza', 'trinquete', 'babear'].includes(sign)) {
-       return removeEmptyExamples(lemma);
-    }
+        // Caso: Llevar -> llevar a mal andar (Texto de ejemplo en definición)
+        if (sign === 'llevar') {
+            patchedLemma = fixLlevarSubentry(patchedLemma);
+        }
 
-    return lemma;
-  });
+        // Caso: Taza, Trinquete, Babear (Ejemplos vacíos estorbando)
+        if (['taza', 'trinquete', 'babear'].includes(sign)) {
+            patchedLemma = removeEmptyExamples(patchedLemma);
+        }
+
+        return lemma;
+    });
 }
 
 // --- HELPER FUNCTIONS (Cirugía Específica) ---
@@ -88,12 +88,12 @@ function injectPlaceholderDefinition(lemma: Lemma): Lemma {
 }
 
 function fixBrokenCrossReference(lemma: Lemma): Lemma {
-     lemma.senses.forEach(sense => {
+    lemma.senses.forEach(sense => {
         sense.definitions.forEach(def => {
             // Si el texto es corto y no tiene "+", se lo agregamos
             if (def.plainText.length < 50 && !def.plainText.includes('+')) {
                 // Envolvemos en <b> para que el RichText lo detecte
-                def.text = `<b>${def.plainText.trim()} +</b>`; 
+                def.text = `<b>${def.plainText.trim()} +</b>`;
             }
         });
     });
@@ -109,7 +109,7 @@ function removeEmptyExamples(lemma: Lemma): Lemma {
 
     lemma.senses.forEach(s => cleaner(s.definitions));
     lemma.subentries.forEach(sub => sub.sense.forEach(s => cleaner(s.definitions)));
-    
+
     return lemma;
 }
 
@@ -134,4 +134,48 @@ function fixLlevarSubentry(lemma: Lemma): Lemma {
         });
     }
     return lemma;
+}
+
+/**
+ * REGLA LEXICOGRÁFICA: Normalización de sustantivos de persona como adjetivos.
+ * Se inyecta la marca en el campo 'utc' para mantener la consistencia con 
+ * el nodo <Definition.UTC> del XML original.
+ */
+function fixPersonaAdjectiveMark(lemma: Lemma): Lemma {
+  const UTC_MARK = "U.t.c.adj.";
+  const PERSONA_REGEX = /^persona\b/i;
+
+  const patchDefinitions = (defs: Definition[]): Definition[] => {
+    return defs.map(def => {
+      // Verificamos si la definición (plainText) comienza con "persona"
+      const startsWithPersona = PERSONA_REGEX.test(def.plainText.trim());
+
+      if (startsWithPersona) {
+        // Solo actuamos si el campo utc está vacío o no contiene la marca
+        const hasUtcMark = def.utc?.toLowerCase().includes("u.t.c.adj");
+
+        if (!hasUtcMark) {
+          return {
+            ...def,
+            // Inyectamos en el campo utc que su parser ya extrae
+            utc: UTC_MARK
+          };
+        }
+      }
+      return def;
+    });
+  };
+
+  // Aplicación recursiva en acepciones y subentradas
+  lemma.senses.forEach(s => {
+    s.definitions = patchDefinitions(s.definitions);
+  });
+
+  lemma.subentries.forEach(sub => {
+    sub.sense.forEach(s => {
+      s.definitions = patchDefinitions(s.definitions);
+    });
+  });
+
+  return lemma;
 }
