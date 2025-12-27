@@ -4,9 +4,10 @@ import { useState } from "react";
 import { useDictionary } from "@/hooks/useDictionary";
 import { SearchBar } from "@/components/SearchBar";
 import { EntryCard } from "@/components/EntryCard";
-import { Lemma } from "@/lib/parser";
 
-import WelcomeModal from "@/components/WelcomeModal";
+import { Lemma } from "@/lib/parser";
+import { Sidebar } from "@/components/Sidebar"; // <--- IMPORTAR SIDEBAR
+import { Menu } from "lucide-react"; // <--- IMPORTAR ICONO MENU
 
 export default function Page() {
   const {
@@ -19,41 +20,48 @@ export default function Page() {
     getIncidences
   } = useDictionary();
 
-  const [isWelcomeOpen, setIsWelcomeOpen] = useState<boolean>(true); // Modal abierto por defecto
+  // Estados de UI
+  const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState('dictionary'); // 'dictionary' | 'presentation' | 'credits' | 'contact'
 
+  // Estados del Diccionario
   const [incidenceTerm, setIncidenceTerm] = useState<string | null>(null);
   const [incidenceResults, setIncidenceResults] = useState<Lemma[]>([]);
   const [selectedLemma, setSelectedLemma] = useState<Lemma | null>(null);
 
-  // Mantenemos esta lógica por si se usa en otro lado
   const handleShowIncidences = (term: string) => {
     const results = getIncidences(term);
     setIncidenceResults(results);
     setIncidenceTerm(term);
   };
 
+  const checkLemmaExists = (term: string): boolean => {
+    if (!term) return false;
+    const cleanTerm = term.toLowerCase().trim();
+    if (allLemmas.some(l => l.lemmaSign.toLowerCase() === cleanTerm)) return true;
+    const existsInSubentries = allLemmas.some(l =>
+      l.subentries.some(sub =>
+        sub.sign.replace(/<[^>]+>/g, "").toLowerCase().trim() === cleanTerm
+      )
+    );
+    return existsInSubentries;
+  };
+
   const handleSelectLemma = (lemma: Lemma) => {
     setSelectedLemma(lemma);
     setSearchQuery(lemma.lemmaSign);
+    setActiveSection('dictionary'); // Si selecciona algo, forzamos la vista de diccionario
   };
 
-  // --- LÓGICA DE NAVEGACIÓN MEJORADA (Soporte para Subentradas) ---
   const handleNavigate = (term: string) => {
     const cleanTerm = term.trim().toLowerCase();
-
-    // 1. Intento A: Buscar coincidencia exacta en el LEMA PRINCIPAL
-    // Ejemplo: Busca "hecho, -a" -> Encuentra "hecho, -a"
     let targetLemma = allLemmas.find(
       (l) => l.lemmaSign.toLowerCase() === cleanTerm
     );
 
-    // 2. Intento B: Si falla, buscar dentro de las SUBENTRADAS
-    // Ejemplo: Busca "hecho funda" -> El buscador revisa las subentradas y encuentra que pertenece al padre "hecho"
     if (!targetLemma) {
       targetLemma = allLemmas.find((l) =>
         l.subentries.some((sub) => {
-          // Limpiamos el HTML del título de la subentrada (ej: "<u>hecho</u> funda")
-          // para compararlo texto con texto ("hecho funda")
           const plainSubSign = sub.sign.replace(/<[^>]+>/g, "").toLowerCase().trim();
           return plainSubSign === cleanTerm;
         })
@@ -61,11 +69,9 @@ export default function Page() {
     }
 
     if (targetLemma) {
-      // ¡Éxito! Abrimos la ficha del padre que contiene la subentrada o el lema
       handleSelectLemma(targetLemma);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } else {
-      // Fallback: Si definitivamente no existe, mostramos incidencias
       console.warn(`Lema no encontrado: ${term}, mostrando incidencias.`);
       handleShowIncidences(term);
     }
@@ -88,53 +94,132 @@ export default function Page() {
   }
 
   return (
-    <main className="min-h-screen w-full bg-background text-foreground font-sans selection:bg-brand-accent selection:text-white">
-      {/* Nuevo Componente de Bienvenida */}
-      <WelcomeModal 
-        isOpen={isWelcomeOpen} 
-        onClose={() => setIsWelcomeOpen(false)} 
-      />
-      {/* Header */}
-      <header className="border-b border-brand-blue sticky top-0 z-20 bg-brand-blue text-white shadow-md">
-        <div className="max-w-[1600px] mx-auto px-6 py-8 md:py-12">
-          <h1 className="text-3xl md:text-5xl font-serif font-bold text-white tracking-tight mb-8 text-center">
-            ECUATORIANISMOS
-          </h1>
-          <div className="max-w-4xl mx-auto">
-            <SearchBar
-              value={searchQuery}
-              onChange={(val) => {
-                setSearchQuery(val);
-                // Si el usuario borra todo, limpiamos la selección
-                if (val === '') setSelectedLemma(null);
-              }}
-              suggestions={lemmas}
-              onSelect={handleSelectLemma}
-            />
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen w-full bg-background text-foreground font-sans selection:bg-brand-accent selection:text-white flex">
 
-      <div className="max-w-[1600px] mx-auto px-6 py-12">
-        <div className="max-w-4xl mx-auto">
-          {selectedLemma ? (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <EntryCard
-                lemma={selectedLemma}
-                onNavigate={handleNavigate}
+      {/* 1. SIDEBAR (Izquierda) */}
+      <Sidebar
+        isOpen={isSidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        activeSection={activeSection}
+        onNavigate={setActiveSection}
+      />
+
+      {/* 2. CONTENIDO PRINCIPAL (Derecha) */}
+      <main className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
+
+        {/* Header con Buscador Persistente */}
+        <header className="border-b border-brand-blue bg-brand-blue text-white shadow-md sticky top-0 z-20">
+          <div className="max-w-[1200px] mx-auto px-4 py-6 md:py-8">
+
+            <div className="flex items-center gap-4 mb-6 relative">
+              {/* Botón Menú Móvil */}
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="lg:hidden p-2 hover:bg-white/10 rounded-md transition-colors"
+              >
+                <Menu className="w-6 h-6 text-white" />
+              </button>
+
+              <h1 className="text-2xl md:text-4xl font-serif font-bold text-white tracking-tight text-center flex-1 lg:text-left">
+                ECUATORIANISMOS
+              </h1>
+            </div>
+
+            <div className="max-w-3xl mx-auto">
+              <SearchBar
+                value={searchQuery}
+                onChange={(val) => {
+                  setSearchQuery(val);
+                  if (val === '') setSelectedLemma(null);
+                  if (val.length > 0) setActiveSection('dictionary'); // Si escribe, volvemos al diccionario
+                }}
+                suggestions={lemmas}
+                onSelect={handleSelectLemma}
               />
             </div>
-          ) : (
-            <div className="text-center py-24 opacity-50">
-              <p className="text-2xl font-serif text-gray-400 mb-4">
-                Escribe una palabra en el buscador para comenzar.
-              </p>
-              <div className="text-6xl text-gray-200">📖</div>
-            </div>
-          )}
-        </div>
-      </div>
+          </div>
+        </header>
 
-    </main>
+        {/* Cuerpo Dinámico según la Sección Activa */}
+        <div className="flex-1 bg-white">
+          <div className="max-w-[1200px] mx-auto px-6 py-12">
+
+            {/* VISTA: DICCIONARIO (Tu código original) */}
+            {activeSection === 'dictionary' && (
+              <div className="max-w-4xl mx-auto animate-in fade-in duration-300">
+                {selectedLemma ? (
+                  <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <EntryCard
+                      lemma={selectedLemma}
+                      onNavigate={handleNavigate}
+                      checkExists={checkLemmaExists}
+                    />
+                  </div>
+                ) : (
+                  <div className="text-center py-12 lg:py-24 opacity-60">
+                    <div className="flex gap-4 justify-center items-center">
+                      {/* Aquí irán las imágenes reales cuando te las envíen */}
+                      <div className="w-1/4 w-1/4 bg-gray-200 rounded-full flex items-center justify-center text-[18px] text-center text-gray-500">
+                        Logo<br />AEL
+                      </div>
+                      <div className="w-1/4 w-1/4 bg-gray-200 rounded-full flex items-center justify-center text-[18px] text-center text-gray-500">
+                        Logo<br />150
+                      </div>
+                    </div>
+                    <img src="./cover.jpg" alt="cover" />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* VISTA: PRESENTACIÓN */}
+            {activeSection === 'presentation' && (
+              <div className="max-w-3xl mx-auto prose prose-lg prose-blue animate-in fade-in slide-in-from-left-4 duration-300">
+                <h2 className="font-serif text-3xl text-brand-blue mb-6 border-b border-gray-100 pb-4">Presentación del diccionario</h2>
+                <div className="text-gray-600 space-y-4">
+                  <p className="italic text-gray-400">[Aquí irán los tres párrafos pequeños que enviará el cliente]</p>
+                  <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+                </div>
+              </div>
+            )}
+
+            {/* VISTA: CRÉDITOS */}
+            {activeSection === 'credits' && (
+              <div className="max-w-3xl mx-auto animate-in fade-in slide-in-from-left-4 duration-300">
+                <h2 className="font-serif text-3xl text-brand-blue mb-6 border-b border-gray-100 pb-4">Equipo de Trabajo</h2>
+                <div className="bg-gray-50 p-8 rounded-lg border border-gray-100">
+                  <p className="italic text-gray-400 text-center">[Aquí irá la lista de la Comisión de Lexicografía y el equipo técnico]</p>
+                </div>
+              </div>
+            )}
+
+            {/* VISTA: CONTACTO */}
+            {activeSection === 'contact' && (
+              <div className="max-w-3xl mx-auto animate-in fade-in slide-in-from-left-4 duration-300">
+                <h2 className="font-serif text-3xl text-brand-blue mb-6 border-b border-gray-100 pb-4">Dónde adquirirlo</h2>
+                <div className="grid md:grid-cols-2 gap-8">
+                  <div className="bg-blue-50 p-6 rounded-lg border border-blue-100">
+                    <h3 className="font-bold text-brand-blue mb-2">Academia Ecuatoriana de la Lengua</h3>
+                    <p className="text-gray-600 mb-4">Venta física disponible en nuestras oficinas.</p>
+                    <p className="text-sm text-gray-500">[Datos de contacto pendientes]</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+          </div>
+        </div>
+
+        {/* Footer Global */}
+        <footer className="bg-gray-50 border-t border-gray-200 py-6 text-center text-sm text-gray-500">
+          <p className="leading-relaxed">
+            © {new Date().getFullYear()} Academia Ecuatoriana de la Lengua.
+            <br />
+            Todos los derechos reservados.
+          </p>
+        </footer>
+
+      </main>
+    </div>
   );
 }
