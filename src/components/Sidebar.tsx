@@ -59,7 +59,7 @@ export function Sidebar({ isOpen, onClose, activeSection, onNavigate }: SidebarP
           </div>
 
           {/* 2. Menú de Navegación */}
-          <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-2">
+          <nav className="flex-1  py-6 px-4 space-y-2">
             {menuItems.map((item) => (
               <button
                 key={item.id}
@@ -84,11 +84,6 @@ export function Sidebar({ isOpen, onClose, activeSection, onNavigate }: SidebarP
           {/* 3. Espacio para la Portada (Oso/Sello distintivo) */}
           <div className="p-6 border-t border-gray-100 bg-gray-50">
             <img src="./cover.jpg" alt="cover" />
-          </div>
-
-          {/* Footer pequeño */}
-          <div className="p-4 text-center text-[10px] text-gray-400">
-            © 2025 AEL
           </div>
         </div>
       </aside>
