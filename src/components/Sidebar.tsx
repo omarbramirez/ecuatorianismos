@@ -83,9 +83,7 @@ export function Sidebar({ isOpen, onClose, activeSection, onNavigate }: SidebarP
 
           {/* 3. Espacio para la Portada (Oso/Sello distintivo) */}
           <div className="p-6 border-t border-gray-100 bg-gray-50">
-            <div className="aspect-[3/4] bg-white border-2 border-dashed border-gray-300 rounded-md flex items-center justify-center text-gray-400 text-sm p-4 text-center">
-              <span>Espacio para imagen de Portada (Oso)</span>
-            </div>
+            <img src="./cover.jpg" alt="cover" />
           </div>
 
           {/* Footer pequeño */}
