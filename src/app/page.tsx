@@ -166,7 +166,10 @@ export default function Page() {
                         Logo<br />150
                       </div>
                     </div>
-                    <img src="./cover.jpg" alt="cover" />
+                    <p className="text-2xl font-serif text-gray-400 m-5">
+                      Bienvenido al Diccionario
+                    </p>
+                    <p className="text-gray-400">Selecciona una opción del menú o realiza una búsqueda.</p>
                   </div>
                 )}
               </div>
