@@ -35,7 +35,6 @@ const Contact: React.FC = () => {
                 <div>
                   <span className="block font-bold text-sm uppercase tracking-wider text-blue-200 mb-1">Teléfono</span>
                   <p>+593 (02) 257-0782</p>
-                  <p>0988349311</p>
                 </div>
               </li>
 

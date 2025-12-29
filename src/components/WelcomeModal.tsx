@@ -57,7 +57,7 @@ const WelcomeModal: React.FC<WelcomeModalProps> = ({ isOpen, onClose }) => {
               Metodología y Rigor Científico
             </h3>
             <p className="text-gray-700">
-              Su elaboración es el resultado de más de diez años de trabajo continuo por parte de la Comisión de Lexicografía. La obra se sustenta en un robusto corpus textual propio (<span className="italic">corpha.ec</span>), que documenta la evolución lingüística desde 1930 hasta la actualidad. Cada entrada incorpora marcas diatópicas, diastráticas y diafásicas que orientan al usuario sobre la vitalidad, distribución y contextos de empleo de los ecuatorianismos.
+              Su elaboración es el resultado de más de diez años de trabajo continuo por parte de la Comisión de Lexicografía. La obra se sustenta en un robusto corpus textual propio ( <a href="corpha.ec" className='text-blue-600'>corpha.ec</a>), que documenta la evolución lingüística desde 1930 hasta la actualidad. Cada entrada incorpora marcas diatópicas, diastráticas y diafásicas que orientan al usuario sobre la vitalidad, distribución y contextos de empleo de los ecuatorianismos.
             </p>
           </div>
 

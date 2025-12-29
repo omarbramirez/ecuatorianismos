@@ -11,6 +11,10 @@ interface EntryCardProps {
     checkExists?: (term: string) => boolean;
 }
 
+const cleanTerm = (text: string): string => {
+    return text.replace(/[.,:;]+$/, '').trim();
+};
+
 // --- 1. COMPONENTE DE HIDRATACIÓN (INTELIGENTE) ---
 const RichDefinitionText = ({
     htmlContent,

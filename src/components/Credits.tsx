@@ -1,5 +1,5 @@
 import React from 'react';
-import { Code, Users, ArrowUpRight } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 
 /**
  * Interfaz para definir la estructura de un miembro del equipo.
@@ -25,12 +25,12 @@ const DEV_TEAM: TeamMember[] = [
 
 const COMMISSION_MEMBERS: TeamMember[] = [
     { name: 'Julio Pazos Barrera' },
-    { name: 'Fernando Miño-Garcés', isDeceased: true },
+    { name: 'Fernando Miño-Garcés', isDeceased: false },
     { name: 'Diego Araujo Sánchez' },
     { name: 'Simón Espinosa Cordero' },
-    { name: 'Rodrigo Borja Cevallos', isDeceased: true },
+    { name: 'Rodrigo Borja Cevallos', isDeceased: false },
     { name: 'Susana Cordero de Espinosa' },
-    { name: 'Bruno Sáenz Andrade', isDeceased: true },
+    { name: 'Bruno Sáenz Andrade', isDeceased: false },
     { name: 'Marco Antonio Rodríguez' },
     { name: 'Fabián Corral Burbano de Lara' },
 ];
