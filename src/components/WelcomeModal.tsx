@@ -34,20 +34,53 @@ const WelcomeModal: React.FC<WelcomeModalProps> = ({ isOpen, onClose }) => {
       >
         {/* Sección de Conceptualización */}
         <div className="p-8 border-b border-gray-100">
-          <h2 className="text-2xl font-serif font-bold text-brand-blue mb-6 tracking-tight">
-            Presentación del Diccionario
-          </h2>
-          <div className="space-y-4 text-gray-700 leading-relaxed font-sans text-wrap">
-            <p>
-              [Texto Inicial]: Este proyecto representa un esfuerzo por documentar la riqueza léxica y las variaciones idiomáticas propias de nuestra región, consolidando una base de datos dinámica para la consulta académica.
-            </p>
-            <p>
-              [Metodología]: A través de un riguroso proceso lexicográfico, se han categorizado términos y subentradas que reflejan la identidad lingüística contemporánea, permitiendo una navegación intuitiva y técnica.
-            </p>
-            <p>
-              [Alcance]: El motor de búsqueda integrado permite explorar no solo lemas principales, sino también estructuras complejas dentro de las subentradas, garantizando una recuperación de información exhaustiva.
+           <section className="max-w-4xl mx-auto my-12 bg-white shadow-sm rounded-xl overflow-hidden border border-gray-100">
+      <div className="p-8 md:p-12 border-b border-gray-50">
+        <h2 className="text-3xl font-serif font-bold text-[#1a365d] mb-8 tracking-tight border-l-4 border-blue-600 pl-6">
+          Presentación del Diccionario
+        </h2>
+        
+        <div className="space-y-6 text-gray-800 leading-relaxed font-sans text-wrap">
+          {/* Introducción Institucional */}
+          <div className="group">
+            <h3 className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-2 opacity-70 group-hover:opacity-100 transition-opacity">
+              Naturaleza de la Obra
+            </h3>
+            <p className="text-lg text-gray-700">
+              El <span className="font-semibold text-gray-900">Diccionario académico de ecuatorianismos (DAE)</span> es una obra lexicográfica de carácter descriptivo, sincrónico y diferencial que reúne más de diez mil palabras. Concebido para registrar y explicar el léxico del español tal como se habla y se escribe en el Ecuador, su publicación conmemora el sesquicentenario de la Academia Ecuatoriana de la Lengua, la institución cultural más antigua del país.
             </p>
           </div>
+
+          {/* Fundamentación Metodológica */}
+          <div className="group">
+            <h3 className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-2 opacity-70 group-hover:opacity-100 transition-opacity">
+              Metodología y Rigor Científico
+            </h3>
+            <p className="text-gray-700">
+              Su elaboración es el resultado de más de diez años de trabajo continuo por parte de la Comisión de Lexicografía. La obra se sustenta en un robusto corpus textual propio (<span className="italic">corpha.ec</span>), que documenta la evolución lingüística desde 1930 hasta la actualidad. Cada entrada incorpora marcas diatópicas, diastráticas y diafásicas que orientan al usuario sobre la vitalidad, distribución y contextos de empleo de los ecuatorianismos.
+            </p>
+          </div>
+
+          {/* Innovación y Alcance Digital */}
+          <div className="group">
+            <h3 className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-2 opacity-70 group-hover:opacity-100 transition-opacity">
+              Alcance y Dimensión Digital
+            </h3>
+            <p className="text-gray-700">
+              Esta primera edición completamente digital —y tercera edición impresa— trasciende la consulta tradicional mediante un motor de búsqueda especializado. El sistema permite una exploración exhaustiva de lemas, acepciones, etimologías y nombres científicos, facilitando actualizaciones dinámicas que integran al DAE plenamente en el siglo XXI como una memoria lingüística viva y reapropiada por la comunidad hispanohablante.
+            </p>
+          </div>
+        </div>
+
+        {/* Nota al pie de respaldo institucional */}
+        <div className="mt-10 pt-6 border-t border-gray-100">
+          <p className="text-xs text-gray-500 italic flex items-center gap-2">
+            <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+            Proyecto desarrollado con el respaldo del Ministerio de Educación, Deporte y Cultura del Ecuador.
+          </p>
+        </div>
+      </div>
+    </section>
         </div>
 
         {/* Sección de Equipo Técnico y Lexicográfico */}

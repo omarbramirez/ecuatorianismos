@@ -9,6 +9,12 @@ import { Lemma } from "@/lib/parser";
 import { Sidebar } from "@/components/Sidebar"; // <--- IMPORTAR SIDEBAR
 import { Menu } from "lucide-react"; // <--- IMPORTAR ICONO MENU
 
+import PresentationSection from "@/components/Presentation"
+import AbbreviationsSection from "@/components/Abbreviations"
+import TeamAndAcquisitionSection from "@/components/Credits"
+import Contact from "@/components/Contact"
+
+
 export default function Page() {
   const {
     lemmas,
@@ -110,22 +116,14 @@ export default function Page() {
         {/* Header con Buscador Persistente */}
         <header className="border-b border-brand-blue bg-brand-blue text-white shadow-md sticky top-0 z-20">
           <div className="max-w-[1200px] mx-auto px-4 py-6 md:py-8">
-
-            <div className="flex items-center gap-4 mb-6 relative">
+            <div className="max-w-3xl mx-auto flex flex-row">
               {/* Botón Menú Móvil */}
               <button
                 onClick={() => setSidebarOpen(true)}
-                className="lg:hidden p-2 hover:bg-white/10 rounded-md transition-colors"
+                className="lg:hidden p-2 hover:bg-white/10 rounded-md transition-colors mr-3"
               >
                 <Menu className="w-6 h-6 text-white" />
               </button>
-
-              <h1 className="text-2xl md:text-4xl font-serif font-bold text-white tracking-tight text-center flex-1 lg:text-left">
-                ECUATORIANISMOS
-              </h1>
-            </div>
-
-            <div className="max-w-3xl mx-auto">
               <SearchBar
                 value={searchQuery}
                 onChange={(val) => {
@@ -156,20 +154,8 @@ export default function Page() {
                     />
                   </div>
                 ) : (
-                  <div className="text-center py-12 lg:py-24 opacity-60">
-                    <div className="flex gap-4 justify-center items-center">
-                      {/* Aquí irán las imágenes reales cuando te las envíen */}
-                      <div className="w-1/4 w-1/4 bg-gray-200 rounded-full flex items-center justify-center text-[18px] text-center text-gray-500">
-                        Logo<br />AEL
-                      </div>
-                      <div className="w-1/4 w-1/4 bg-gray-200 rounded-full flex items-center justify-center text-[18px] text-center text-gray-500">
-                        Logo<br />150
-                      </div>
-                    </div>
-                    <p className="text-2xl font-serif text-gray-400 m-5">
-                      Bienvenido al Diccionario
-                    </p>
-                    <p className="text-gray-400">Selecciona una opción del menú o realiza una búsqueda.</p>
+                  <div className="text-center">
+                    <img src="./cover_logos.png" alt="cover" />
                   </div>
                 )}
               </div>
@@ -177,37 +163,19 @@ export default function Page() {
 
             {/* VISTA: PRESENTACIÓN */}
             {activeSection === 'presentation' && (
-              <div className="max-w-3xl mx-auto prose prose-lg prose-blue animate-in fade-in slide-in-from-left-4 duration-300">
-                <h2 className="font-serif text-3xl text-brand-blue mb-6 border-b border-gray-100 pb-4">Presentación del diccionario</h2>
-                <div className="text-gray-600 space-y-4">
-                  <p className="italic text-gray-400">[Aquí irán los tres párrafos pequeños que enviará el cliente]</p>
-                  <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
-                </div>
-              </div>
+              <PresentationSection />
             )}
 
-            {/* VISTA: CRÉDITOS */}
+            {activeSection === 'abbreviations' && (
+              <AbbreviationsSection />
+            )}
+
             {activeSection === 'credits' && (
-              <div className="max-w-3xl mx-auto animate-in fade-in slide-in-from-left-4 duration-300">
-                <h2 className="font-serif text-3xl text-brand-blue mb-6 border-b border-gray-100 pb-4">Equipo de Trabajo</h2>
-                <div className="bg-gray-50 p-8 rounded-lg border border-gray-100">
-                  <p className="italic text-gray-400 text-center">[Aquí irá la lista de la Comisión de Lexicografía y el equipo técnico]</p>
-                </div>
-              </div>
+              <TeamAndAcquisitionSection />
             )}
 
-            {/* VISTA: CONTACTO */}
             {activeSection === 'contact' && (
-              <div className="max-w-3xl mx-auto animate-in fade-in slide-in-from-left-4 duration-300">
-                <h2 className="font-serif text-3xl text-brand-blue mb-6 border-b border-gray-100 pb-4">Dónde adquirirlo</h2>
-                <div className="grid md:grid-cols-2 gap-8">
-                  <div className="bg-blue-50 p-6 rounded-lg border border-blue-100">
-                    <h3 className="font-bold text-brand-blue mb-2">Academia Ecuatoriana de la Lengua</h3>
-                    <p className="text-gray-600 mb-4">Venta física disponible en nuestras oficinas.</p>
-                    <p className="text-sm text-gray-500">[Datos de contacto pendientes]</p>
-                  </div>
-                </div>
-              </div>
+              <Contact/>
             )}
 
           </div>
