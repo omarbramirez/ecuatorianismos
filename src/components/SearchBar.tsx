@@ -127,7 +127,7 @@ export function SearchBar({ value, onChange, suggestions, onSelect }: SearchBarP
                 <input
                     type="text"
                     className="w-full py-3 pl-4 pr-12 bg-white/10 border border-white/20 rounded-sm text-white placeholder-white/60 focus:bg-white focus:text-brand-blue focus:placeholder-gray-400 outline-none transition-all font-sans"
-                    placeholder="Buscar palabra"
+                    placeholder="Buscar palabra..."
                     value={localValue}
                     onChange={(e) => {
                         const newValue = e.target.value;

@@ -11,22 +11,36 @@ interface EntryCardProps {
     checkExists?: (term: string) => boolean;
 }
 
-const cleanTerm = (text: string): string => {
-    return text.replace(/[.,:;]+$/, '').trim();
-};
+interface RichDefinitionTextProps {
+    htmlContent: string;
+    onLinkClick: (term: string) => void;
+    checkExists?: (term: string) => boolean;
+    disableLinks?: boolean; // ← control contextual
+}
+
+function canLink(term: string, checkExists?: (term: string) => boolean): boolean {
+    if (!checkExists) return false;
+    if (!term) return false;
+    return checkExists(term);
+}
 
 // --- 1. COMPONENTE DE HIDRATACIÓN (INTELIGENTE) ---
 const RichDefinitionText = ({
     htmlContent,
     onLinkClick,
-    checkExists
-}: {
-    htmlContent: string;
-    onLinkClick: (term: string) => void;
-    checkExists?: (term: string) => boolean;
-}) => {
+    checkExists,
+    disableLinks = false
+}: RichDefinitionTextProps) => {
     if (!htmlContent) return null;
 
+
+
+    // 🔒 CORTE EDITORIAL ABSOLUTO
+    if (disableLinks) {
+        return (
+            <span dangerouslySetInnerHTML={{ __html: htmlContent }} />
+        );
+    }
     const parts = htmlContent.split(/(<b>.*?<\/b>)/g);
 
     return (
@@ -60,8 +74,18 @@ const RichDefinitionText = ({
                         return (
                             <span key={index} className="inline-flex flex-wrap gap-x-1 items-baseline">
                                 {words.map((word, wIdx) => {
-                                    // Limpiamos cada palabra individualmente para el link
                                     const wordLink = word.replace(/[.,:;]+$/, '').trim();
+                                    const isLinkable = canLink(wordLink, checkExists);
+
+                                    if (!isLinkable) {
+                                        return (
+                                            <span
+                                                key={wIdx}
+                                                dangerouslySetInnerHTML={{ __html: word }}
+                                            />
+                                        );
+                                    }
+
                                     return (
                                         <button
                                             key={wIdx}
@@ -73,13 +97,14 @@ const RichDefinitionText = ({
                                             title={`Ir a: ${wordLink}`}
                                         >
                                             <span dangerouslySetInnerHTML={{ __html: word }} />
-                                            <ArrowUpRight 
-                                                className="w-3 h-3 inline-block opacity-50 group-hover/link:opacity-100 transition-opacity relative top-[1px]" 
-                                                strokeWidth={2.5} 
+                                            <ArrowUpRight
+                                                className="w-3 h-3 inline-block opacity-50 group-hover/link:opacity-100 transition-opacity relative top-[1px]"
+                                                strokeWidth={2.5}
                                             />
                                         </button>
                                     );
                                 })}
+
                             </span>
                         );
                     }
@@ -96,9 +121,9 @@ const RichDefinitionText = ({
                             title={`Ir a la entrada de: ${navigationTerm}`}
                         >
                             <span dangerouslySetInnerHTML={{ __html: visualText }} />
-                            <ArrowUpRight 
-                                className="w-3.5 h-3.5 inline-block opacity-60 group-hover/link:opacity-100 transition-opacity relative top-[2px]" 
-                                strokeWidth={2.5} 
+                            <ArrowUpRight
+                                className="w-3.5 h-3.5 inline-block opacity-60 group-hover/link:opacity-100 transition-opacity relative top-[2px]"
+                                strokeWidth={2.5}
                             />
                         </button>
                     );
@@ -128,8 +153,8 @@ function SenseBlock({
         <div className={`text-gray-800 ${isSubentry ? "mt-2" : ""}`}>
             {/* ... Cabecera del Sentido (sin cambios) ... */}
             <div className="flex flex-wrap items-baseline gap-2 mb-1">
-                 {/* ... (código existente) ... */}
-                 {sense.senseNumber && (
+                {/* ... (código existente) ... */}
+                {sense.senseNumber && (
                     <span className="font-bold text-brand-blue text-lg mr-1">
                         {sense.senseNumber}.
                     </span>
@@ -139,20 +164,21 @@ function SenseBlock({
                         {sense.pos}
                     </span>
                 )}
-                 {sense.scientificName && (
+                {sense.scientificName && (
                     <span className={`font-serif text-gray-600 ${isSubentry ? "text-base" : "text-lg"}`}>
-                        <span dangerouslySetInnerHTML={{ __html: sense.scientificName }} />
+                        
+                        (<span dangerouslySetInnerHTML={{ __html: sense.scientificName }} />)
                     </span>
                 )}
             </div>
-            
+
             {/* Etimología Sense */}
             {sense.etimologia && (
                 <div className="mb-2">
-                    <span
+                    (<span
                         className="font-sans text-sm text-gray-600 [&>i]:font-serif [&>i]:italic"
                         dangerouslySetInnerHTML={{ __html: sense.etimologia }}
-                    />
+                    />)
                 </div>
             )}
 
@@ -164,8 +190,8 @@ function SenseBlock({
                         </span>
 
                         <div className="mb-1">
-                             {/* ... Marcas (Uso, geo, utc) sin cambios ... */}
-                             <div className="inline">
+                            {/* ... Marcas (Uso, geo, utc) sin cambios ... */}
+                            <div className="inline">
                                 {def.usageLabel && (
                                     <span className="text-[21px] font-bold tracking-wider text-brand-accent mr-2">
                                         {def.usageLabel}
@@ -199,7 +225,7 @@ function SenseBlock({
                                 <RichDefinitionText
                                     htmlContent={def.text}
                                     onLinkClick={onNavigate}
-                                    checkExists={checkExists} // <--- AQUÍ
+                                    checkExists={checkExists}
                                 />
                             </span>
 
@@ -211,10 +237,11 @@ function SenseBlock({
                             <div className="pl-4 mt-1 border-l-2 border-gray-200">
                                 {def.examples.map((ex, i) => (
                                     <p key={i} className="font-serif italic text-gray-600 mb-1 last:mb-0">
-                                        <RichDefinitionText 
+                                        <RichDefinitionText
                                             htmlContent={ex.text}
                                             onLinkClick={onNavigate}
                                             checkExists={checkExists} // <--- AQUÍ
+                                            disableLinks={true}
                                         />
                                         {ex.source && (
                                             <span className="text-gray-400 not-italic text-sm font-sans ml-2 block sm:inline">
@@ -242,7 +269,7 @@ export function EntryCard({ lemma, onNavigate, checkExists }: EntryCardProps) {
     return (
         <div className="bg-white border-b border-gray-200 py-8 hover:bg-gray-50 transition-colors group">
             {/* ... Encabezado y Variantes sin cambios ... */}
-             <div className="flex justify-between items-start mb-4">
+            <div className="flex justify-between items-start mb-4">
                 <h2 className="text-3xl md:text-4xl font-serif font-bold text-brand-blue tracking-tight">
                     {lemma.lemmaSign}
                 </h2>
@@ -250,14 +277,14 @@ export function EntryCard({ lemma, onNavigate, checkExists }: EntryCardProps) {
             {lemma.variants && (
                 <p className="text-sm text-gray-500 mb-6 font-sans">
                     Variantes:{" "}
-                    <span className="italic font-serif text-gray-700">
+                    <span className="italic font-serif text-gray-500">
                         {Array.isArray(lemma.variants) ? lemma.variants.join(", ") : lemma.variants}
                     </span>
                 </p>
             )}
-            
+
             {lemma.etimologia && (
-                 <div className="mb-6 p-3 bg-gray-50 border-l-4 border-brand-accent/30 rounded-r">
+                <div className="mb-6 p-3 bg-gray-50 border-l-4 border-brand-accent/30 rounded-r">
                     <p className="font-serif text-gray-700 text-lg">
                         <span className="font-sans text-xs font-bold uppercase text-gray-400 mr-2 tracking-wider">
                             Etimología

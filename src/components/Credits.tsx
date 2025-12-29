@@ -41,7 +41,7 @@ const COMMISSION_MEMBERS: TeamMember[] = [
  */
 const TeamAndAcquisitionSection: React.FC = () => {
     return (
-        <section className="max-w-4xl mx-auto bg-white  overflow-hidden ">
+        <section className="max-w-4xl mx-auto bg-white  overflow-hidden px-6">
             <h2 className="text-3xl font-serif font-bold text-[#1a365d] mb-8 tracking-tight border-l-4 border-blue-600 pl-6">
                 Equipo de Trabajo
             </h2>

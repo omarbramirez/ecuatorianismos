@@ -31,7 +31,7 @@ const PresentationSection = () => {
                     {/* Innovación y Alcance Digital */}
                     <div className="group">
                         <p className="text-gray-700">
-                            Palabra por palabra, acepción por acepción, ejemplo por ejemplo, el <span className="italic">DAE</span> se elaboró con meticulosidad y entrega durante poco más de diez años de trabajo continuo. Se apoya en un amplio corpus textual propio <a href="https://corpha.ec/" className='text-blue-600'>(corpha.ec)</a>  , que abarca desde 1930 hasta la actualidad, lo que permite describir el estado contemporáneo del español ecuatoriano. Asimismo, incorpora marcas diatópicas, diastráticas y diafásicas que orientan al lector sobre la vitalidad, distribución y condiciones de empleo de cada palabra.
+                            Palabra por palabra, acepción por acepción, ejemplo por ejemplo, el <span className="italic">DAE</span> se elaboró con meticulosidad y entrega durante poco más de diez años de trabajo continuo. Se apoya en un amplio corpus textual propio <a href="https://corpha.ec/" className='text-blue-600' target="_blank" rel="noopener noreferrer">(corpha.ec)</a>  , que abarca desde 1930 hasta la actualidad, lo que permite describir el estado contemporáneo del español ecuatoriano. Asimismo, incorpora marcas diatópicas, diastráticas y diafásicas que orientan al lector sobre la vitalidad, distribución y condiciones de empleo de cada palabra.
                         </p>
                     </div>
 

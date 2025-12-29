@@ -115,9 +115,10 @@ export default function Page() {
 
         {/* Header con Buscador Persistente */}
         <header className="border-b border-brand-blue bg-brand-blue text-white shadow-md sticky top-0 z-20">
-          <h1 className="text-2xl md:text-4xl font-serif font-bold text-white tracking-tight text-center flex-1 lg:text-left pt-4">
-                DICCIONARIO DE ECUATORIANISMOS
-              </h1>
+          <h1 className="text-2xl md:text-4xl font-serif font-bold text-white tracking-tight text-center flex-1 lg:text-left pt-4 uppercase px-3">
+            Diccionario académico de ecuatorianismos
+          </h1>
+
           <div className="max-w-[1200px] mx-auto px-4 py-6 md:py-8">
             <div className="max-w-3xl mx-auto flex flex-row">
               {/* Botón Menú Móvil */}
@@ -127,7 +128,7 @@ export default function Page() {
               >
                 <Menu className="w-6 h-6 text-white" />
               </button>
-              
+
               <SearchBar
                 value={searchQuery}
                 onChange={(val) => {
@@ -144,11 +145,11 @@ export default function Page() {
 
         {/* Cuerpo Dinámico según la Sección Activa */}
         <div className="flex-1 bg-white">
-          <div className="max-w-[1200px] mx-auto px-6 py-12">
+          <div className="max-w-[1200px] mx-auto px-3 py-12">
 
             {/* VISTA: DICCIONARIO (Tu código original) */}
             {activeSection === 'dictionary' && (
-              <div className="max-w-4xl mx-auto animate-in fade-in duration-300">
+              <div className="max-w-4xl mx-auto animate-in fade-in duration-300 px-4">
                 {selectedLemma ? (
                   <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <EntryCard
@@ -158,8 +159,29 @@ export default function Page() {
                     />
                   </div>
                 ) : (
-                  <div className="text-center">
-                    <img src="./cover_logos.png" alt="cover" />
+                  <div className="flex flex-col items-center gap-8">
+
+                    {/* Logos institucionales */}
+                    <div className="flex flex-row items-center justify-between gap-6 flex-wrap w-8/12 lg:w-10/12 ">
+                      <img
+                        src="./logo-ael.png"
+                        alt="Academia Ecuatoriana de la Lengua"
+                        className="h-auto w-1/3 object-contain"
+                      />
+                      <img
+                        src="./logo-asale.png"
+                        alt="Asociación de Academias de la Lengua Española"
+                        className="h-auto w-1/3 object-contain"
+                      />
+                    </div>
+
+                    {/* Portada */}
+                    <img
+                      src="./cover_fixed.png"
+                      alt="cover"
+                      className="w-full max-w-md sm:max-w-lg md:max-w-xl h-auto"
+                    />
+
                   </div>
                 )}
               </div>
@@ -179,7 +201,7 @@ export default function Page() {
             )}
 
             {activeSection === 'contact' && (
-              <Contact/>
+              <Contact />
             )}
 
           </div>

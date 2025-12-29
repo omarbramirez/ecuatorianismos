@@ -42,16 +42,18 @@ export function Sidebar({ isOpen, onClose, activeSection, onNavigate }: SidebarP
                 <X className="w-6 h-6" />
               </button>
             </div>
-
-            {/* Placeholder para los Logos */}
-            {/* <div className="flex gap-4 justify-center items-center mb-2">
-              <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center text-[10px] text-center text-gray-500">
-                Logo<br />AEL
-              </div>
-              <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center text-[10px] text-center text-gray-500">
-                Logo<br />150
-              </div>
-            </div> */}
+            <div className="flex flex-row items-center justify-between gap-6 flex-wrap w-8/12 lg:w-10/12 pb-6 mx-auto">
+                      <img
+                        src="./logo-ael.png"
+                        alt="Academia Ecuatoriana de la Lengua"
+                        className="h-auto w-1/3 object-contain"
+                      />
+                      <img
+                        src="./logo-asale.png"
+                        alt="Asociación de Academias de la Lengua Española"
+                        className="h-auto w-1/3 object-contain"
+                      />
+                    </div>
             <p className="text-center font-serif font-bold text-brand-blue text-sm leading-tight">
               Academia Ecuatoriana<br />de la Lengua
             </p>
