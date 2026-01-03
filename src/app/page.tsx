@@ -115,9 +115,9 @@ export default function Page() {
 
         {/* Header con Buscador Persistente */}
         <header className="border-b border-brand-blue bg-brand-blue text-white shadow-md sticky top-0 z-20">
-          <h1 className="text-2xl md:text-4xl font-serif font-bold text-white tracking-tight text-center flex-1 lg:text-left pt-4 uppercase px-3">
+          {/* <h1 className="text-2xl md:text-4xl font-serif font-bold text-white tracking-tight text-center flex-1 lg:text-left pt-4 uppercase px-3">
             Diccionario académico de ecuatorianismos
-          </h1>
+          </h1> */}
 
           <div className="max-w-[1200px] mx-auto px-4 py-6 md:py-8">
             <div className="max-w-3xl mx-auto flex flex-row">
