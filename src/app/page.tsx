@@ -134,7 +134,7 @@ export default function Page() {
                 onChange={(val) => {
                   setSearchQuery(val);
                   if (val === '') setSelectedLemma(null);
-                  if (val.length > 0) setActiveSection('dictionary'); // Si escribe, volvemos al diccionario
+                  // if (val.length > 0) setActiveSection('dictionary');
                 }}
                 suggestions={lemmas}
                 onSelect={handleSelectLemma}
