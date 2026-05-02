@@ -1,102 +1,115 @@
-[
-  {
-    "lemma": "babear",
-    "type": "EMPTY_EXAMPLE_WITH_CONTENT",
-    "details": "Definición existe, pero el bloque de ejemplo está vacío (posible mal ubicación).",
-    "contentPreview": "Desear una persona intensamente a alguien o algo: ...",
-    "hasSubentries": false
-  },
-  {
-    "lemma": "balurdo, -a",
-    "type": "EMPTY_EXAMPLE_WITH_CONTENT",
-    "details": "Definición existe, pero el bloque de ejemplo está vacío (posible mal ubicación).",
-    "contentPreview": "balurde...",
-    "hasSubentries": false
-  },
-  {
-    "lemma": "checo",
-    "type": "EMPTY_EXAMPLE_WITH_CONTENT",
-    "details": "Definición existe, pero el bloque de ejemplo está vacío (posible mal ubicación).",
-    "contentPreview": "jaboncillo...",
-    "hasSubentries": false
-  },
-  {
-    "lemma": "chilchigua",
-    "type": "EMPTY_EXAMPLE_WITH_CONTENT",
-    "details": "Definición existe, pero el bloque de ejemplo está vacío (posible mal ubicación).",
-    "contentPreview": "chigchigua...",
-    "hasSubentries": false
-  },
-  {
-    "lemma": "guasicamía",
-    "type": "EMPTY_EXAMPLE_WITH_CONTENT",
-    "details": "Definición existe, pero el bloque de ejemplo está vacío (posible mal ubicación).",
-    "contentPreview": "huasicamía...",
-    "hasSubentries": false
-  },
-  {
-    "lemma": "horcón",
-    "type": "GHOST_DEFINITION",
-    "details": "Hay ejemplos pero falta la definición.",
-    "hasSubentries": false
-  },
-  {
-    "lemma": "hualingo, -a",
-    "type": "GHOST_DEFINITION",
-    "details": "Hay ejemplos pero falta la definición.",
-    "hasSubentries": false
-  },
-  {
-    "lemma": "llevar",
-    "subentry": "llevar a mal andar",
-    "type": "EMPTY_EXAMPLE_WITH_CONTENT",
-    "details": "Definición existe, pero el bloque de ejemplo está vacío (posible mal ubicación).",
-    "contentPreview": "Esos problemas que tienes en el trabajo los llevas...",
-    "hasSubentries": false
-  },
-  {
-    "lemma": "pan",
-    "type": "ZOMBIE_NODE",
-    "details": "Acepción ? vacía y sin ejemplos. Nodo muerto.",
-    "hasSubentries": true
-  },
-  {
-    "lemma": "papi",
-    "type": "ZOMBIE_NODE",
-    "details": "Acepción 2 vacía y sin ejemplos. Nodo muerto.",
-    "hasSubentries": false
-  },
-  {
-    "lemma": "rascabonito",
-    "type": "ZOMBIE_NODE",
-    "details": "Acepción ? vacía y sin ejemplos. Nodo muerto.",
-    "hasSubentries": false
-  },
-  {
-    "lemma": "rayado, -a",
-    "type": "GHOST_DEFINITION",
-    "details": "Hay ejemplos pero falta la definición.",
-    "hasSubentries": false
-  },
-  {
-    "lemma": "rehogado",
-    "type": "ZOMBIE_NODE",
-    "details": "Acepción ? vacía y sin ejemplos. Nodo muerto.",
-    "hasSubentries": false
-  },
-  {
-    "lemma": "taza",
-    "subentry": "taza del baño",
-    "type": "EMPTY_EXAMPLE_WITH_CONTENT",
-    "details": "Definición existe, pero el bloque de ejemplo está vacío (posible mal ubicación).",
-    "contentPreview": "Aparato sanitario para evacuar orina y excrementos...",
-    "hasSubentries": false
-  },
-  {
-    "lemma": "trinquete",
-    "type": "EMPTY_EXAMPLE_WITH_CONTENT",
-    "details": "Definición existe, pero el bloque de ejemplo está vacío (posible mal ubicación).",
-    "contentPreview": "Aldabilla con que se aseguran las puertas...",
-    "hasSubentries": false
+{
+  "total_lemas_analizados": 7016,
+  "total_sublemas_analizados": 2243,
+  "total_entradas_global": 9259,
+  "estadisticas_por_letra": {
+    "A": {
+      "lemas": 526,
+      "sublemas": 136
+    },
+    "B": {
+      "lemas": 446,
+      "sublemas": 120
+    },
+    "C": {
+      "lemas": 1635,
+      "sublemas": 409
+    },
+    "D": {
+      "lemas": 276,
+      "sublemas": 126
+    },
+    "E": {
+      "lemas": 358,
+      "sublemas": 93
+    },
+    "F": {
+      "lemas": 193,
+      "sublemas": 40
+    },
+    "G": {
+      "lemas": 359,
+      "sublemas": 87
+    },
+    "H": {
+      "lemas": 199,
+      "sublemas": 192
+    },
+    "I": {
+      "lemas": 115,
+      "sublemas": 36
+    },
+    "J": {
+      "lemas": 123,
+      "sublemas": 38
+    },
+    "K": {
+      "lemas": 10,
+      "sublemas": 0
+    },
+    "L": {
+      "lemas": 232,
+      "sublemas": 66
+    },
+    "M": {
+      "lemas": 535,
+      "sublemas": 222
+    },
+    "N": {
+      "lemas": 57,
+      "sublemas": 12
+    },
+    "Ñ": {
+      "lemas": 19,
+      "sublemas": 0
+    },
+    "O": {
+      "lemas": 62,
+      "sublemas": 38
+    },
+    "P": {
+      "lemas": 705,
+      "sublemas": 271
+    },
+    "Q": {
+      "lemas": 68,
+      "sublemas": 26
+    },
+    "R": {
+      "lemas": 272,
+      "sublemas": 53
+    },
+    "S": {
+      "lemas": 249,
+      "sublemas": 140
+    },
+    "T": {
+      "lemas": 374,
+      "sublemas": 103
+    },
+    "U": {
+      "lemas": 32,
+      "sublemas": 15
+    },
+    "V": {
+      "lemas": 87,
+      "sublemas": 18
+    },
+    "W": {
+      "lemas": 11,
+      "sublemas": 0
+    },
+    "X": {
+      "lemas": 2,
+      "sublemas": 0
+    },
+    "Y": {
+      "lemas": 23,
+      "sublemas": 1
+    },
+    "Z": {
+      "lemas": 48,
+      "sublemas": 1
+    }
   }
-]
+}
